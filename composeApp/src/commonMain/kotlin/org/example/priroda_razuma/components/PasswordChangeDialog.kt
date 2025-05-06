@@ -168,7 +168,6 @@ fun PasswordChangeDialog(
         }
     }
 
-    // Автоматический фокус на первое поле при открытии
     LaunchedEffect(Unit) {
         try {
             oldPasswordFocusRequester.requestFocus()
@@ -344,7 +343,6 @@ fun PasswordChangeDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Поле подтверждения пароля
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = {
@@ -409,7 +407,7 @@ fun PasswordChangeDialog(
                         ) {
                             Text(
                                 text = "Отмена",
-                                fontSize = 16.sp,
+                                fontSize = 13.sp,
                                 fontFamily = Theme.fonts.nunito,
                                 fontWeight = FontWeight.Medium
                             )
@@ -438,7 +436,7 @@ fun PasswordChangeDialog(
 
                         Text(
                             text = if (isLoading) "Сохранение..." else "Сохранить",
-                            fontSize = 16.sp,
+                            fontSize = 13.sp,
                             fontFamily = Theme.fonts.nunito,
                             fontWeight = FontWeight.Medium
                         )

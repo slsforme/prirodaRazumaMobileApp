@@ -39,11 +39,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,10 +63,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
+import com.preat.peekaboo.image.picker.SelectionMode
+import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.example.priroda_razuma.auth.AuthManager
 import org.example.priroda_razuma.components.PasswordChangeDialog
 import org.example.priroda_razuma.preferences.Theme
+import org.example.priroda_razuma.utils.toImageBitmap
 import org.jetbrains.compose.resources.painterResource
 import prirodarazumamobile.composeapp.generated.resources.Res
 import prirodarazumamobile.composeapp.generated.resources.default_user
@@ -97,12 +102,61 @@ fun ProfileScreen(
     var showErrorToast by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var showPasswordChangeDialog by remember { mutableStateOf(false) }
+    var userProfileImage by remember { mutableStateOf<ImageBitmap?>(null) }
 
     val userId = authManager.userId ?: 0
     val userFio = authManager.userFio ?: "Не указано"
     val roleName = authManager.roleName ?: "Не указана"
     val email = authManager.email ?: "Не указана"
     val roleId = authManager.roleId ?: 0
+
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                val photoBytes = authManager.getUserPhoto(userId)
+                photoBytes?.let { bytes ->
+                    withContext(Dispatchers.Main) {
+                        userProfileImage = bytes.toImageBitmap()
+                    }
+                }
+            } catch (e: Exception) {
+                println("Ошибка при загрузке фото: ${e.message}")
+            }
+        }
+    }
+
+    val singleImagePicker = rememberImagePickerLauncher(
+        selectionMode = SelectionMode.Single,
+        scope = coroutineScope,
+        onResult = { byteArrays ->
+            byteArrays.firstOrNull()?.let { imageBytes ->
+
+                isUploadingPhoto = true
+                coroutineScope.launch {
+                    try {
+                        val success = authManager.uploadUserPhoto(userId, imageBytes)
+                        if (success) {
+                            val newPhotoBytes = authManager.getUserPhoto(userId)
+                            newPhotoBytes?.let { bytes ->
+                                withContext(Dispatchers.Main) {
+                                    userProfileImage = bytes.toImageBitmap()
+                                }
+                            }
+                        } else {
+                            errorMessage = "Не удалось загрузить фото"
+                            showErrorToast = true
+                        }
+                    } catch (e: Exception) {
+                        errorMessage = "Ошибка: ${e.message}"
+                        showErrorToast = true
+                    } finally {
+                        isUploadingPhoto = false
+                        showPhotoPickerDialog = false
+                    }
+                }
+            }
+        }
+    )
 
     Column(
         modifier = Modifier
@@ -123,23 +177,6 @@ fun ProfileScreen(
                     )
                 )
         ) {
-            IconButton(
-                onClick = openDrawer,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .size(40.dp)
-                    .shadow(4.dp, CircleShape)
-                    .background(Color.White, CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Меню",
-                    tint = PrimaryColor,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
             Text(
                 text = "Личный кабинет",
                 color = Color.White,
@@ -168,14 +205,21 @@ fun ProfileScreen(
                     .border(3.dp, SecondaryColor, CircleShape)
                     .clickable { showPhotoPickerDialog = true }
             ) {
-                // Изображение профиля
-                // Тут будет загрузка реального изображения по API
-                Image(
-                    painter = painterResource(Res.drawable.default_user),
-                    contentDescription = "Фото профиля",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                if (userProfileImage != null) {
+                    Image(
+                        bitmap = userProfileImage!!,
+                        contentDescription = "Фото профиля",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(Res.drawable.default_user),
+                        contentDescription = "Фото профиля",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
 
                 if (isUploadingPhoto) {
                     Box(
@@ -387,51 +431,40 @@ fun ProfileScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         OutlinedButton(
-                            onClick = {
-                                showPhotoPickerDialog = false
-                                // Здесь будет реализована логика выбора фото
-                            },
-                            modifier = Modifier.weight(1f),
+                            onClick = { singleImagePicker.launch() },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 backgroundColor = Color.Transparent,
                                 contentColor = PrimaryColor
                             ),
                             border = BorderStroke(1.dp, PrimaryColor)
                         ) {
-                            Text("Галерея")
+                            Text(
+                                "Галерея",
+                                fontFamily = Theme.fonts.robotoFlex
+                            )
                         }
 
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        // Кнопка "Сделать снимок"
                         Button(
-                            onClick = {
-                                showPhotoPickerDialog = false
-                                // Здесь будет реализована логика съемки фото
-                            },
-                            modifier = Modifier.weight(1f),
+                            onClick = { showPhotoPickerDialog = false },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
                             colors = ButtonDefaults.buttonColors(
                                 backgroundColor = PrimaryColor,
                                 contentColor = Color.White
                             )
                         ) {
-                            Text("Камера")
+                            Text(
+                                "Отмена",
+                                fontFamily = Theme.fonts.robotoFlex
+                            )
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    TextButton(
-                        onClick = { showPhotoPickerDialog = false },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    ) {
-                        Text(
-                            text = "Отмена",
-                            color = TextSecondaryColor
-                        )
                     }
                 }
             }
@@ -489,6 +522,13 @@ fun ProfileScreen(
                     }
                 }
             }
+        }
+    }
+
+    LaunchedEffect(showErrorToast) {
+        if (showErrorToast) {
+            kotlinx.coroutines.delay(5000)
+            showErrorToast = false
         }
     }
 }

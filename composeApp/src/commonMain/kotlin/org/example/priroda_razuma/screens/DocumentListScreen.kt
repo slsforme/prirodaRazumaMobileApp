@@ -40,7 +40,6 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -63,6 +62,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.example.priroda_razuma.auth.AuthManager
@@ -104,6 +105,18 @@ fun DocumentListScreen(
 
     val coroutineScope = rememberCoroutineScope()
     val scaffoldState = rememberScaffoldState()
+    val launcher = rememberFileSaverLauncher { file ->
+        if (file != null && selectedDoc != null) {
+            coroutineScope.launch {
+                try {
+                    val (bytes, _) = authManager.downloadDocumentWithFilename(selectedDoc!!.id)
+                    file.write(bytes)
+                } catch (e: Exception) {
+                    scaffoldState.snackbarHostState.showSnackbar("Ошибка сохранения: ${e.message}")
+                }
+            }
+        }
+    }
 
     val ITEMS_PER_PAGE = 10
 
@@ -168,6 +181,17 @@ fun DocumentListScreen(
         return authorId?.let { allUsers.find { u -> u.id == it }?.fio } ?: "-"
     }
 
+    fun handleDownload(docId: Int, filename: String) {
+        coroutineScope.launch {
+            try {
+                selectedDoc = allDocuments.find { it.id == docId }
+                launcher.launch(filename, "pdf")
+            } catch (e: Exception) {
+                scaffoldState.snackbarHostState.showSnackbar("Ошибка при скачивании: ${e.message}")
+            }
+        }
+    }
+
     val directoryTypes = allDocuments.map { it.subdirectory_type }.distinct()
 
     Scaffold(
@@ -192,23 +216,6 @@ fun DocumentListScreen(
                                     LightAccentColor,
                                     shape = RoundedCornerShape(1.5.dp)
                                 )
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = onNavigateToCreateDocument,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .shadow(4.dp, CircleShape)
-                            .clip(CircleShape)
-                            .background(LightAccentColor)
-                            .size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Загрузить документ",
-                            tint = Color.Black
                         )
                     }
                 },
@@ -586,12 +593,11 @@ fun DocumentListScreen(
                                         document = doc,
                                         patientName = getPatientName(doc.patient_id),
                                         authorName = getAuthorName(doc.author_id),
-                                        onEdit = { onNavigateToEditDocument(doc.id) },
                                         onDelete = {
                                             selectedDoc = doc
                                             showDeleteDialog = true
                                         },
-                                        onDownload = { /* TODO: Implement download */ },
+                                        onDownload = { handleDownload(doc.id, doc.name) },
                                         animationDelay = index * 50L
                                     )
                                 }
@@ -672,7 +678,6 @@ fun DocumentItem(
     document: Document,
     patientName: String,
     authorName: String,
-    onEdit: () -> Unit,
     onDelete: () -> Unit,
     onDownload: () -> Unit,
     animationDelay: Long = 0
@@ -754,11 +759,14 @@ fun DocumentItem(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Button(
                         onClick = onDownload,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 4.dp),
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = Color(0xFFA3F49F),
                             contentColor = TextPrimaryColor
@@ -773,33 +781,6 @@ fun DocumentItem(
                             fontSize = 14.sp
                         )
                     }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Button(
-                        onClick = onEdit,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 4.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = Color(0xFFA3F49F),
-                            contentColor = TextPrimaryColor
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = "Редактировать",
-                            fontFamily = Theme.fonts.nunito,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
 
                     Button(
                         onClick = onDelete,
@@ -811,15 +792,13 @@ fun DocumentItem(
                             contentColor = TextPrimaryColor
                         ),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(
                             text = "Удалить",
                             fontFamily = Theme.fonts.nunito,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            fontSize = 14.sp
                         )
                     }
                 }

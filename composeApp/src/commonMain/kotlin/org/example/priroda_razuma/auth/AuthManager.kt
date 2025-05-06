@@ -1,5 +1,6 @@
 package org.example.priroda_razuma.auth
 
+import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
@@ -10,6 +11,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -21,6 +23,7 @@ import org.example.priroda_razuma.models.Document
 import org.example.priroda_razuma.models.Patient
 import org.example.priroda_razuma.models.User
 import org.example.priroda_razuma.models.Role
+import org.example.priroda_razuma.screens.UpdateUserRequest
 
 class AuthManager(private val client: HttpClient) {
     private var _accessToken: String? = null
@@ -58,9 +61,9 @@ class AuthManager(private val client: HttpClient) {
             try {
                 val userResponse = getUserById(tokenResponse.user_id)
                 _userFio = userResponse.fio
-                _email = userResponse.login // Assuming login is used as email here
+                _email = userResponse.login
                 _roleId = userResponse.role_id
-                _photoUrl = null // Adjust if photo URL is available in User model
+                _photoUrl = null
 
                 val roleResponse = getRoleById(userResponse.role_id)
                 _roleName = roleResponse.name
@@ -112,21 +115,24 @@ class AuthManager(private val client: HttpClient) {
             }
             response.status.value in 200..299
         } catch (e: Exception) {
-            println("Error creating user: ${e.message}")
+            Logger.e("Error creating user: ${e.message}")
             false
         }
     }
 
-    suspend fun updateUser(userId: Int, user: User): Boolean = withContext(Dispatchers.IO) {
+    suspend fun updateUser(
+        userId: Int,
+        data: UpdateUserRequest
+    ): Boolean = withContext(Dispatchers.IO) {
         try {
             val response = client.put("${Configuration.BASE_API_URL}/users/$userId") {
                 contentType(ContentType.Application.Json)
-                setBody(user)
+                setBody(data)
                 _accessToken?.let { headers.append("Authorization", "Bearer $it") }
             }
             response.status.value in 200..299
         } catch (e: Exception) {
-            println("Error updating user: ${e.message}")
+            Logger.e("Error updating user: ${e.message}")
             false
         }
     }
@@ -140,7 +146,7 @@ class AuthManager(private val client: HttpClient) {
             }
             response.status.value in 200..299
         } catch (e: Exception) {
-            println("Error updating user: ${e.message}")
+            Logger.e("Error updating user: ${e.message}")
             false
         }
     }
@@ -152,7 +158,7 @@ class AuthManager(private val client: HttpClient) {
             }
             response.status.value in 200..299
         } catch (e: Exception) {
-            println("Error deleting user: ${e.message}")
+            Logger.e("Error deleting user: ${e.message}")
             false
         }
     }
@@ -208,27 +214,19 @@ class AuthManager(private val client: HttpClient) {
         }
     }
 
-    suspend fun updateUserProfile(userId: Int, userData: Map<String, Any>): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val response = client.put("${Configuration.BASE_API_URL}/api/v1/users/$userId/update") {
-                contentType(ContentType.Application.Json)
-                setBody(userData)
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
-            }
-            response.status.value in 200..299
-        } catch (e: Exception) {
-            false
-        }
-    }
-
     suspend fun uploadUserPhoto(userId: Int, photoBytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.post("${Configuration.BASE_API_URL}/api/v1/users/$userId/photo") {
+            val response = client.post("${Configuration.BASE_API_URL}/users/$userId/photo") {
                 contentType(ContentType.MultiPart.FormData)
                 setBody(MultiPartFormDataContent(formData {
-                    append("photo", photoBytes, Headers.build {
-                        append(HttpHeaders.ContentDisposition, "filename=\"photo.jpg\"")
-                    })
+                    append(
+                        "photo",
+                        photoBytes,
+                        Headers.build {
+                            append(HttpHeaders.ContentType, "image/jpeg")
+                            append(HttpHeaders.ContentDisposition, "filename=\"user_photo.jpg\"")
+                        }
+                    )
                 }))
                 _accessToken?.let { headers.append("Authorization", "Bearer $it") }
             }
@@ -239,9 +237,37 @@ class AuthManager(private val client: HttpClient) {
         }
     }
 
+    suspend fun getUserPhoto(userId: Int): ByteArray? = withContext(Dispatchers.IO) {
+        try {
+            val response = client.get("${Configuration.BASE_API_URL}/users/$userId/photo") {
+                _accessToken?.let {
+                    headers.append(HttpHeaders.Authorization, "Bearer $it")
+                }
+            }
+
+            return@withContext when (response.status) {
+                HttpStatusCode.OK -> response.body<ByteArray>()
+                HttpStatusCode.NotFound -> null
+                else -> {
+                    println("Unexpected response code: ${response.status}")
+                    null
+                }
+            }
+        } catch (e: ClientRequestException) {
+            if (e.response.status == HttpStatusCode.NotFound) {
+                return@withContext null
+            }
+            println("Request failed: ${e.message}")
+            null
+        } catch (e: Exception) {
+            println("Error fetching photo: ${e.message}")
+            null
+        }
+    }
+
     suspend fun updateUserPassword(userId: Int, oldPassword: String, newPassword: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.put("${Configuration.BASE_API_URL}/api/v1/users/$userId/password") {
+            val response = client.put("${Configuration.BASE_API_URL}/users/$userId/password") {
                 contentType(ContentType.Application.Json)
                 setBody(mapOf(
                     "old_password" to oldPassword,
@@ -399,6 +425,49 @@ class AuthManager(private val client: HttpClient) {
             _accessToken?.let { headers.append("Authorization", "Bearer $it") }
         }
         response.body()
+    }
+
+    suspend fun deleteUserPhoto(userId: Int): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val response = client.delete("${Configuration.BASE_API_URL}/users/$userId/photo") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.status.value in 200..299
+        } catch (e: Exception) {
+            println("Error deleting user's photo: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun downloadDocumentWithFilename(documentId: Int): Pair<ByteArray, String> = withContext(Dispatchers.IO) {
+        try {
+            val response = client.get("${Configuration.BASE_API_URL}/documents/$documentId/download") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+
+            val contentDisposition = response.headers["Content-Disposition"]
+            var filename = "download"
+
+            if (contentDisposition != null) {
+                val filenameMatch = Regex("filename=(.*)").find(contentDisposition)
+                if (filenameMatch != null && filenameMatch.groupValues.size > 1) {
+                    filename = filenameMatch.groupValues[1]
+                    if (filename.startsWith("\"") && filename.endsWith("\"")) {
+                        filename = filename.substring(1, filename.length - 1)
+                    }
+                    filename = filename.replace("+", " ")
+                        .replace("%([0-9A-Fa-f]{2})".toRegex()) { matchResult ->
+                            val hexValue = matchResult.groupValues[1]
+                            hexValue.toInt(16).toChar().toString()
+                        }
+                }
+            }
+
+            Pair(response.body<ByteArray>(), filename)
+        } catch (e: Exception) {
+            println("Error downloading document: ${e.message}")
+            throw e
+        }
     }
 
     fun logout() {

@@ -23,6 +23,7 @@ import org.example.priroda_razuma.screens.PatientFormScreen
 import org.example.priroda_razuma.screens.PatientListScreen
 import org.example.priroda_razuma.screens.RoleFormScreen
 import org.example.priroda_razuma.screens.RoleListScreen
+import org.example.priroda_razuma.screens.UserFormScreen
 import org.example.priroda_razuma.screens.UserListScreen
 import org.example.priroda_razuma.ui.components.SideBar
 import org.example.priroda_razuma.ui.screens.*
@@ -104,29 +105,29 @@ fun App() {
                                 }
                             }
                         }
+
                         Screen.Users -> {
                             var isCreatingUser by remember { mutableStateOf(false) }
                             var editingUserId by remember { mutableStateOf<Int?>(null) }
 
                             if (isCreatingUser) {
-                                PatientFormScreen(
+                                UserFormScreen(
                                     authManager = authManager,
                                     isEdit = false,
                                     onNavigateBack = { isCreatingUser = false }
                                 )
                             } else if (editingUserId != null) {
-                                PatientFormScreen(
+                                UserFormScreen(
                                     authManager = authManager,
                                     isEdit = true,
-                                    patientId = editingUserId,
+                                    userId = editingUserId,
                                     onNavigateBack = { editingUserId = null }
                                 )
                             } else {
                                 UserListScreen(
                                     authManager = authManager,
                                     onNavigateToCreateUser = { isCreatingUser = true },
-                                    onNavigateToEditUser = {}
-                                    // onNavigateToEditPatient = { roleId -> editingPatientId = roleId }
+                                    onNavigateToEditUser = { userId -> editingUserId = userId}
                                 )
                             }
                         }

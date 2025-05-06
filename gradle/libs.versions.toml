@@ -11,14 +11,32 @@ androidx-espresso-core = "3.6.1"
 androidx-lifecycle = "2.8.4"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.2.1"
+coilCompose = "2.5.0"
 compose-multiplatform = "1.7.3"
 junit = "4.13.2"
+kermit = "2.0.4"
+koinCore = "3.4.0"
 kotlin = "2.1.20"
+kotlinxDatetime = "0.5.0"
+ktorClientCio = "2.3.7"
+kotlinxSerializationJson = "1.6.3"
+ktorSerializationKotlinxJson = "2.0.3"
+material3 = "1.6.0"
+materialIconsExtended = "1.7.8"
+mpfilepicker = "3.1.0"
+navigationComposeVersion = "2.8.0"
+peekabooUi = "0.5.2"
 uiAndroid = "1.8.0"
 navigationCompose = "2.8.9"
 cameraView = "1.4.2"
+peekaboo = "0.5.2"
 
 [libraries]
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
+androidx-navigation-compose-v280 = { module = "androidx.navigation:navigation-compose", version.ref = "navigationComposeVersion" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koinCore" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -34,6 +52,16 @@ androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktorClientCio" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorSerializationKotlinxJson" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorSerializationKotlinxJson" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
+material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
+peekaboo-ui = { module = "io.github.onseok:peekaboo-ui", version.ref = "peekaboo" }
+peekaboo-image-picker = { module = "io.github.onseok:peekaboo-image-picker", version.ref = "peekaboo" }
+mpfilepicker = { module = "com.darkrockstudios:mpfilepicker", version.ref = "mpfilepicker" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

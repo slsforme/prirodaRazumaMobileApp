@@ -10,7 +10,5 @@ data class User(
     val role_id: Int,
     val email: String?,
     val photo_url: String?,
-    val created_at: String,
-    val updated_at: String,
-    val active: Boolean
+    val active: Boolean,
 )
