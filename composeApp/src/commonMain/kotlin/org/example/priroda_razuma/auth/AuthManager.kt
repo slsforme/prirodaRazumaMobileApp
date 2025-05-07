@@ -19,11 +19,12 @@ import kotlinx.coroutines.withContext
 import org.example.priroda_razuma.preferences.Configuration
 import org.example.priroda_razuma.auth.responses.BaseResponse
 import org.example.priroda_razuma.auth.responses.TokenResponse
+import org.example.priroda_razuma.models.CreateUserRequest
 import org.example.priroda_razuma.models.Document
 import org.example.priroda_razuma.models.Patient
 import org.example.priroda_razuma.models.User
 import org.example.priroda_razuma.models.Role
-import org.example.priroda_razuma.screens.UpdateUserRequest
+import org.example.priroda_razuma.models.UpdateUserRequest
 
 class AuthManager(private val client: HttpClient) {
     private var _accessToken: String? = null
@@ -106,7 +107,7 @@ class AuthManager(private val client: HttpClient) {
         response.body<List<User>>()
     }
 
-    suspend fun createUser(user: User): Boolean = withContext(Dispatchers.IO) {
+    suspend fun createUser(user: CreateUserRequest): Boolean = withContext(Dispatchers.IO) {
         try {
             val response = client.post("${Configuration.BASE_API_URL}/users") {
                 contentType(ContentType.Application.Json)
@@ -359,55 +360,6 @@ class AuthManager(private val client: HttpClient) {
         response.body<Document>()
     }
 
-    suspend fun createDocument(name: String, patientId: Int, subdirectoryType: String, fileBytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val response = client.post("${Configuration.BASE_API_URL}/documents") {
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
-                contentType(ContentType.MultiPart.FormData)
-                setBody(MultiPartFormDataContent(formData {
-                    append("name", name)
-                    append("patient_id", patientId.toString())
-                    append("subdirectory_type", subdirectoryType)
-                    append("file", fileBytes, Headers.build {
-                        append(HttpHeaders.ContentDisposition, "filename=\"document.pdf\"")
-                    })
-                    _userId?.let { append("author_id", it.toString()) }
-                }))
-            }
-            response.status.value in 200..299
-        } catch (e: Exception) {
-            println("Error creating document: ${e.message}")
-            false
-        }
-    }
-
-    suspend fun updateDocument(documentId: Int, document: Document, fileBytes: ByteArray? = null): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val response = client.put("${Configuration.BASE_API_URL}/documents/$documentId") {
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
-                if (fileBytes != null) {
-                    contentType(ContentType.MultiPart.FormData)
-                    setBody(MultiPartFormDataContent(formData {
-                        append("name", document.name)
-                        append("patient_id", document.patient_id.toString())
-                        append("subdirectory_type", document.subdirectory_type)
-                        append("file", fileBytes, Headers.build {
-                            append(HttpHeaders.ContentDisposition, "filename=\"document.pdf\"")
-                        })
-                        document.author_id?.let { append("author_id", it.toString()) }
-                    }))
-                } else {
-                    contentType(ContentType.Application.Json)
-                    setBody(document)
-                }
-            }
-            response.status.value in 200..299
-        } catch (e: Exception) {
-            println("Error updating document: ${e.message}")
-            false
-        }
-    }
-
     suspend fun deleteDocument(documentId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
             val response = client.delete("${Configuration.BASE_API_URL}/documents/$documentId") {
@@ -420,12 +372,6 @@ class AuthManager(private val client: HttpClient) {
         }
     }
 
-    suspend fun downloadDocument(documentId: Int): ByteArray = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/documents/$documentId/download") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
-        }
-        response.body()
-    }
 
     suspend fun deleteUserPhoto(userId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -437,6 +383,13 @@ class AuthManager(private val client: HttpClient) {
             println("Error deleting user's photo: ${e.message}")
             false
         }
+    }
+
+    suspend fun downloadDocument(documentId: Int): ByteArray = withContext(Dispatchers.IO) {
+        val response = client.get("${Configuration.BASE_API_URL}/documents/$documentId/download") {
+            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+        }
+        response.body()
     }
 
     suspend fun downloadDocumentWithFilename(documentId: Int): Pair<ByteArray, String> = withContext(Dispatchers.IO) {

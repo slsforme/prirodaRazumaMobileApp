@@ -64,7 +64,9 @@ import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.example.priroda_razuma.auth.AuthManager
+import org.example.priroda_razuma.models.CreateUserRequest
 import org.example.priroda_razuma.models.Role
+import org.example.priroda_razuma.models.UpdateUserRequest
 import org.example.priroda_razuma.models.User
 import org.example.priroda_razuma.preferences.Theme
 import org.example.priroda_razuma.utils.toImageBitmap
@@ -73,16 +75,6 @@ import prirodarazumamobile.composeapp.generated.resources.Res
 import prirodarazumamobile.composeapp.generated.resources.eye
 import prirodarazumamobile.composeapp.generated.resources.hidden
 
-@Serializable
-data class UpdateUserRequest(
-    val fio: String,
-    val login: String,
-    val email: String?,
-    val active: Boolean,
-    val role_id: Int,
-    val photo_url: String?,
-    val password: String? = null
-)
 
 @Composable
 fun UserFormScreen(
@@ -280,14 +272,15 @@ fun UserFormScreen(
                     password = if (password.isEmpty()) null else password
                 )
 
-                val user = User(
+                val user = CreateUserRequest(
                     id = userId ?: 0,
                     fio = fio,
                     login = login,
                     email = userEmail.ifEmpty { null },
                     active = isActive,
                     role_id = selectedRoleId,
-                    photo_url = photoUrl,
+                    photo_url = null,
+                    password = password
                 )
 
                 if (isEdit && userId != null) {
@@ -442,7 +435,6 @@ fun UserFormScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Photo upload section
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
@@ -456,7 +448,6 @@ fun UserFormScreen(
                         .padding(16.dp)
                 ) {
                     if (userProfileImage != null && !isPhotoDeleted) {
-                        // Display the user's photo
                         Box(
                             modifier = Modifier
                                 .size(100.dp)
@@ -470,7 +461,6 @@ fun UserFormScreen(
                                 modifier = Modifier.fillMaxSize()
                             )
 
-                            // Close button overlay for deleting photo
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
@@ -534,7 +524,6 @@ fun UserFormScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Last name field
                 OutlinedTextField(
                     value = lastName,
                     onValueChange = {
@@ -599,7 +588,6 @@ fun UserFormScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Patronymic field
                 OutlinedTextField(
                     value = patronymic,
                     onValueChange = {

@@ -31,9 +31,10 @@ import androidx.compose.ui.zIndex
 import org.example.priroda_razuma.preferences.Theme
 import org.jetbrains.compose.resources.painterResource
 import prirodarazumamobile.composeapp.generated.resources.Res
-import prirodarazumamobile.composeapp.generated.resources.compose_multiplatform
 import prirodarazumamobile.composeapp.generated.resources.document
 import prirodarazumamobile.composeapp.generated.resources.logout
+import prirodarazumamobile.composeapp.generated.resources.main
+import prirodarazumamobile.composeapp.generated.resources.nature
 import prirodarazumamobile.composeapp.generated.resources.patient
 import prirodarazumamobile.composeapp.generated.resources.setting
 import prirodarazumamobile.composeapp.generated.resources.user
@@ -115,7 +116,7 @@ fun SideBar(
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
-                                painter = painterResource(Res.drawable.compose_multiplatform),
+                                painter = painterResource(Res.drawable.nature),
                                 contentDescription = "Логотип",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Fit

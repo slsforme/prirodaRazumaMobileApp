@@ -23,6 +23,7 @@ import org.example.priroda_razuma.preferences.Theme
 import org.jetbrains.compose.resources.painterResource
 import prirodarazumamobile.composeapp.generated.resources.Res
 import prirodarazumamobile.composeapp.generated.resources.default_user
+import prirodarazumamobile.composeapp.generated.resources.statistics
 
 private val PrimaryColor = Color(0xFF2E7D32)
 private val LightAccentColor = Color(0xFFD3E29F)
@@ -58,7 +59,7 @@ fun EmptyStateView(
             modifier = Modifier.padding(32.dp)
         ) {
             Image(
-                painter = painterResource(Res.drawable.default_user),
+                painter = painterResource(Res.drawable.statistics),
                 contentDescription = "Нет данных",
                 modifier = Modifier
                     .size(200.dp)

@@ -61,14 +61,14 @@ import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.HttpStatusCode
 import io.ktor.utils.io.errors.IOException
 import kotlinx.coroutines.launch
-import org.example.priroda_razuma.preferences.Theme
 import org.example.priroda_razuma.auth.AuthManager
 import org.example.priroda_razuma.auth.responses.TokenResponse
+import org.example.priroda_razuma.preferences.Theme
 import org.jetbrains.compose.resources.painterResource
 import prirodarazumamobile.composeapp.generated.resources.Res
-import prirodarazumamobile.composeapp.generated.resources.main
 import prirodarazumamobile.composeapp.generated.resources.eye
 import prirodarazumamobile.composeapp.generated.resources.hidden
+import prirodarazumamobile.composeapp.generated.resources.nature
 
 val LightGreen = Color(0xFFA3F49F)
 val PaleGreen = Color(0xFFD3E29F)
@@ -207,7 +207,7 @@ fun AuthScreen(
                         )
                 ) {
                     Image(
-                        painter = painterResource(Res.drawable.main),
+                        painter = painterResource(Res.drawable.nature),
                         contentDescription = "Logo",
                         modifier = Modifier.size(96.dp),
                         contentScale = ContentScale.Fit

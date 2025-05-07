@@ -105,11 +105,13 @@ fun DocumentListScreen(
 
     val coroutineScope = rememberCoroutineScope()
     val scaffoldState = rememberScaffoldState()
+
     val launcher = rememberFileSaverLauncher { file ->
         if (file != null && selectedDoc != null) {
             coroutineScope.launch {
                 try {
-                    val (bytes, _) = authManager.downloadDocumentWithFilename(selectedDoc!!.id)
+                    //val (bytes, _) = authManager.downloadDocumentWithFilename(selectedDoc!!.id)
+                    val bytes = authManager.downloadDocument(selectedDoc!!.id)
                     file.write(bytes)
                 } catch (e: Exception) {
                     scaffoldState.snackbarHostState.showSnackbar("Ошибка сохранения: ${e.message}")
@@ -185,7 +187,20 @@ fun DocumentListScreen(
         coroutineScope.launch {
             try {
                 selectedDoc = allDocuments.find { it.id == docId }
-                launcher.launch(filename, "pdf")
+
+                val (name, extension) = run {
+                    val dotIndex = filename.lastIndexOf('.')
+                    if (dotIndex != -1 && dotIndex < filename.length - 1) {
+                        Pair(
+                            filename.substring(0, dotIndex),
+                            filename.substring(dotIndex + 1)
+                        )
+                    } else {
+                        Pair(filename, "")
+                    }
+                }
+
+                launcher.launch(name, extension)
             } catch (e: Exception) {
                 scaffoldState.snackbarHostState.showSnackbar("Ошибка при скачивании: ${e.message}")
             }
