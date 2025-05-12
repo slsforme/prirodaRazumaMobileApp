@@ -28,7 +28,6 @@ kotlin {
     }
 
     sourceSets {
-
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
@@ -42,14 +41,17 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
+
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.android)
+
             implementation(libs.material3)
             implementation(libs.androidx.material.icons.extended)
             implementation(libs.kermit)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.ktor.client.cio)
             implementation(libs.koin.core)
             implementation(libs.androidx.navigation.compose.v280)
             implementation(libs.kotlinx.datetime)

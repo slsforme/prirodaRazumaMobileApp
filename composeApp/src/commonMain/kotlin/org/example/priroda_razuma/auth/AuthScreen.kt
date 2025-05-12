@@ -78,6 +78,7 @@ val ErrorRed = Color(0xFFD32F2F)
 val ErrorLightBg = Color(0xFFFFEBEE)
 val CardShadow = Color(0x14000000)
 
+
 @Composable
 fun AuthScreen(
     authManager: AuthManager,

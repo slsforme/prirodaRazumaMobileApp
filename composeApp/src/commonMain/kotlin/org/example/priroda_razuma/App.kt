@@ -17,6 +17,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import org.example.priroda_razuma.auth.AuthManager
+import org.example.priroda_razuma.auth.HttpClientProvider
 import org.example.priroda_razuma.auth.responses.TokenResponse
 import org.example.priroda_razuma.screens.DocumentListScreen
 import org.example.priroda_razuma.screens.PatientFormScreen
@@ -34,17 +35,7 @@ private val PaleGreen = Color(0xFFE8F5E9)
 @Composable
 @Preview
 fun App() {
-    val httpClient = remember {
-        HttpClient {
-            install(ContentNegotiation) {
-                json(Json {
-                    prettyPrint = true
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                })
-            }
-        }
-    }
+    val httpClient = HttpClientProvider.client
 
     val authManager = remember { AuthManager(httpClient) }
     var isAuthenticated by remember { mutableStateOf(false) }
