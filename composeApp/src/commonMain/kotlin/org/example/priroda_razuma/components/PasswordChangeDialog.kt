@@ -40,7 +40,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -49,7 +48,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -147,23 +145,24 @@ fun PasswordChangeDialog(
                     newPassword
                 )
 
+                isLoading = false
+
                 if (updateResult) {
                     toastMessage = "Пароль успешно изменен"
                     isSuccess = true
+                    showToast = true
 
                     oldPassword = ""
                     newPassword = ""
                     confirmPassword = ""
 
-                    delay(1500)
+                    delay(3000)
                     onDismiss()
                 } else {
                     toastMessage = "Произошла ошибка при смене пароля"
                     isSuccess = false
+                    showToast = true
                 }
-
-                isLoading = false
-                showToast = true
             }
         }
     }

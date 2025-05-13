@@ -59,15 +59,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.preat.peekaboo.image.picker.SelectionMode
 import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
-import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
-import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import org.example.priroda_razuma.auth.AuthManager
 import org.example.priroda_razuma.models.CreateUserRequest
 import org.example.priroda_razuma.models.Role
 import org.example.priroda_razuma.models.UpdateUserRequest
-import org.example.priroda_razuma.models.User
 import org.example.priroda_razuma.preferences.Theme
 import org.example.priroda_razuma.utils.toImageBitmap
 import org.jetbrains.compose.resources.painterResource
@@ -127,6 +123,8 @@ fun UserFormScreen(
         scope = coroutineScope,
         onResult = { byteArrays ->
             byteArrays.firstOrNull()?.let { imageBytes ->
+
+
                 photoBytes = imageBytes
                 userProfileImage = imageBytes.toImageBitmap()
                 isPhotoSelected = true
@@ -139,7 +137,6 @@ fun UserFormScreen(
     LaunchedEffect(isEdit, userId) {
         isLoading = true
         try {
-            // Fetch roles
             roles = authManager.getAllRoles()
 
             if (isEdit && userId != null) {

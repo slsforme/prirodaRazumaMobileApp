@@ -12,10 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.json.Json
 import org.example.priroda_razuma.auth.AuthManager
 import org.example.priroda_razuma.auth.HttpClientProvider
 import org.example.priroda_razuma.auth.responses.TokenResponse
@@ -42,7 +38,7 @@ fun App() {
     var tokenResponse by remember { mutableStateOf<TokenResponse?>(null) }
     var authError by remember { mutableStateOf<String?>(null) }
 
-    var currentScreen by remember { mutableStateOf(Screen.Dashboard) }
+    var currentScreen by remember { mutableStateOf(Screen.Profile) } // Изменено с Dashboard на Profile
     var isSidebarVisible by remember { mutableStateOf(true) }
 
     MaterialTheme {
@@ -123,29 +119,29 @@ fun App() {
                             }
                         }
                         Screen.Patients -> {
-                                var isCreatingPatient by remember { mutableStateOf(false) }
-                                var editingPatientId by remember { mutableStateOf<Int?>(null) }
+                            var isCreatingPatient by remember { mutableStateOf(false) }
+                            var editingPatientId by remember { mutableStateOf<Int?>(null) }
 
-                                if (isCreatingPatient) {
-                                    PatientFormScreen(
-                                        authManager = authManager,
-                                        isEdit = false,
-                                        onNavigateBack = { isCreatingPatient = false }
-                                    )
-                                } else if (editingPatientId != null) {
-                                    PatientFormScreen(
-                                        authManager = authManager,
-                                        isEdit = true,
-                                        patientId = editingPatientId,
-                                        onNavigateBack = { editingPatientId = null }
-                                    )
-                                } else {
-                                    PatientListScreen(
-                                        authManager = authManager,
-                                        onNavigateToCreatePatient = { isCreatingPatient = true },
-                                        onNavigateToEditPatient = { roleId -> editingPatientId = roleId }
-                                    )
-                                }
+                            if (isCreatingPatient) {
+                                PatientFormScreen(
+                                    authManager = authManager,
+                                    isEdit = false,
+                                    onNavigateBack = { isCreatingPatient = false }
+                                )
+                            } else if (editingPatientId != null) {
+                                PatientFormScreen(
+                                    authManager = authManager,
+                                    isEdit = true,
+                                    patientId = editingPatientId,
+                                    onNavigateBack = { editingPatientId = null }
+                                )
+                            } else {
+                                PatientListScreen(
+                                    authManager = authManager,
+                                    onNavigateToCreatePatient = { isCreatingPatient = true },
+                                    onNavigateToEditPatient = { roleId -> editingPatientId = roleId }
+                                )
+                            }
                         }
                         Screen.Documents -> {
                             var isCreatingDocument by remember { mutableStateOf(false) }
@@ -244,6 +240,7 @@ fun App() {
                         tokenResponse = response
                         isAuthenticated = true
                         authError = null
+                        currentScreen = Screen.Profile // Устанавливаем экран профиля при успешном входе
                     },
                     onAuthError = { error ->
                         authError = error

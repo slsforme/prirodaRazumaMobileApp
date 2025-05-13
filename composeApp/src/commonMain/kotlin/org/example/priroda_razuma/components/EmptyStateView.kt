@@ -25,10 +25,8 @@ import prirodarazumamobile.composeapp.generated.resources.Res
 import prirodarazumamobile.composeapp.generated.resources.default_user
 import prirodarazumamobile.composeapp.generated.resources.statistics
 
-private val PrimaryColor = Color(0xFF2E7D32)
 private val LightAccentColor = Color(0xFFD3E29F)
 private val TextPrimaryColor = Color(0xFF1B5E20)
-private val TextSecondaryColor = Color(0xFF424242)
 
 @Composable
 fun EmptyStateView(

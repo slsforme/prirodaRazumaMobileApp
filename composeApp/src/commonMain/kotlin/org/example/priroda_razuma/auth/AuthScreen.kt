@@ -2,10 +2,8 @@ package org.example.priroda_razuma.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -140,7 +138,7 @@ fun AuthScreen(
             is ClientRequestException -> {
                 val statusCode = exception.response.status.value
                 when {
-                    statusCode == HttpStatusCode.Unauthorized.value -> "Неверный логин или пароль"
+                    statusCode == HttpStatusCode.Unauthorized.value -> "Вы неправильно ввели данные"
                     statusCode == HttpStatusCode.NotFound.value -> "Сервер не найден"
                     statusCode in 500..599 -> "Ошибка сервера ($statusCode)"
                     else -> "Ошибка запроса: $statusCode"
@@ -190,13 +188,13 @@ fun AuthScreen(
                     .fillMaxWidth()
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp) // Уменьшено расстояние между элементами
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .padding(vertical = 16.dp)
-                        .size(144.dp)
+                        .padding(vertical = 8.dp) // Уменьшено вертикальное пространство
+                        .size(120.dp) // Немного уменьшен размер логотипа
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
@@ -210,22 +208,23 @@ fun AuthScreen(
                     Image(
                         painter = painterResource(Res.drawable.nature),
                         contentDescription = "Logo",
-                        modifier = Modifier.size(96.dp),
+                        modifier = Modifier.size(80.dp), // Уменьшен размер изображения
                         contentScale = ContentScale.Fit
                     )
                 }
 
                 Text(
                     text = "Природа Разума",
-                    fontSize = 30.sp,
+                    fontSize = 28.sp, // Немного уменьшен размер шрифта
                     fontWeight = FontWeight.Bold,
                     color = DarkGreen,
                     fontFamily = Theme.fonts.nunito,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp)) // Уменьшен размер разделителя
 
+                // Поле логина
                 CustomTextField(
                     value = username,
                     onValueChange = { handleChange("username", it) },
@@ -236,6 +235,7 @@ fun AuthScreen(
                     showErrorMessage = usernameError.isNotEmpty()
                 )
 
+                // Поле пароля
                 CustomTextField(
                     value = password,
                     onValueChange = { handleChange("password", it) },
@@ -249,20 +249,23 @@ fun AuthScreen(
                     onPasswordVisibilityToggle = { isPasswordVisible = !isPasswordVisible }
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                AnimatedVisibility(
-                    visible = loginError.isNotEmpty(),
-                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
-                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
+                // Фиксированная высота для блока сообщения об ошибке
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(70.dp)
                 ) {
-                    ErrorMessage(
-                        message = loginError,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    this@Column.AnimatedVisibility(
+                        visible = loginError.isNotEmpty(),
+                        enter = fadeIn(animationSpec = tween(300)),
+                        exit = fadeOut(animationSpec = tween(300))
+                    ) {
+                        ErrorMessage(
+                            message = loginError,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
                     onClick = {
@@ -277,8 +280,12 @@ fun AuthScreen(
                             try {
                                 val result = authManager.login(username, password)
                                 result.onSuccess { tokenResponse ->
-                                    onLoginSuccess(tokenResponse)
-                                    loginError = ""
+                                    if (authManager.userFio == null) {
+                                        loginError = "Ошибка при загрузке данных пользователя"
+                                    } else {
+                                        onLoginSuccess(tokenResponse)
+                                        loginError = ""
+                                    }
                                 }.onFailure { exception ->
                                     handleLoginError(exception)
                                 }
@@ -305,19 +312,24 @@ fun AuthScreen(
                     shape = RoundedCornerShape(16.dp),
                     enabled = !isLoading
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = DarkGreen,
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text(
-                            "Войти",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = Theme.fonts.nunito
-                        )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = DarkGreen,
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                "Войти",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = Theme.fonts.nunito
+                            )
+                        }
                     }
                 }
             }
@@ -394,23 +406,28 @@ fun CustomTextField(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(64.dp) // Уменьшена высота текстового поля
         )
 
-        AnimatedVisibility(
-            visible = showErrorMessage,
-            enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
-            exit = shrinkVertically(animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
-        ) {
-            Text(
-                text = errorMessage,
-                color = ErrorRed,
-                fontSize = 12.sp,
-                fontFamily = Theme.fonts.robotoFlex,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, top = 4.dp)
-            )
+        // Фиксированный контейнер для сообщения об ошибке с высотой 24dp
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(24.dp)) {
+            this@Column.AnimatedVisibility(
+                visible = showErrorMessage,
+                enter = fadeIn(animationSpec = tween(300)),
+                exit = fadeOut(animationSpec = tween(300))
+            ) {
+                Text(
+                    text = errorMessage,
+                    color = ErrorRed,
+                    fontSize = 12.sp,
+                    fontFamily = Theme.fonts.robotoFlex,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, top = 4.dp)
+                )
+            }
         }
     }
 }
@@ -428,7 +445,7 @@ fun ErrorMessage(message: String, modifier: Modifier = Modifier) {
                 .fillMaxWidth()
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.Start // Изменено на Start для лучшего выравнивания
         ) {
             Icon(
                 imageVector = Icons.Rounded.Warning,
@@ -448,4 +465,3 @@ fun ErrorMessage(message: String, modifier: Modifier = Modifier) {
         }
     }
 }
-

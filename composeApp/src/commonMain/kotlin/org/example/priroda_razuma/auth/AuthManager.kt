@@ -36,14 +36,18 @@ class AuthManager(private val client: HttpClient) {
     private var _roleId: Int? = null
     private var _email: String? = null
     private var _photoUrl: String? = null
+    private var _active: Boolean? = null
 
     val accessToken: String? get() = _accessToken
     val userId: Int? get() = _userId
     val roleId: Int? get() = _roleId
     val userFio: String? get() = _userFio
     val roleName: String? get() = _roleName
+    val login: String? get() = _login
     val email: String? get() = _email
     val photoUrl: String? get() = _photoUrl
+    val active: Boolean? get() = null
+
 
     suspend fun login(username: String, password: String): Result<TokenResponse> = withContext(Dispatchers.IO) {
         try {
@@ -57,14 +61,15 @@ class AuthManager(private val client: HttpClient) {
             _accessToken = tokenResponse.access_token
             _refreshToken = tokenResponse.refresh_token
             _userId = tokenResponse.user_id
-            _login = username
 
             try {
                 val userResponse = getUserById(tokenResponse.user_id)
+                _login = userResponse.login
                 _userFio = userResponse.fio
-                _email = userResponse.login
+                _email = userResponse.email
                 _roleId = userResponse.role_id
                 _photoUrl = null
+                _active = userResponse.active
 
                 val roleResponse = getRoleById(userResponse.role_id)
                 _roleName = roleResponse.name

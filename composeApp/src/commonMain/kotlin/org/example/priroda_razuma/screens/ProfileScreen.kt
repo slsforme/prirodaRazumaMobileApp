@@ -1,6 +1,12 @@
 package org.example.priroda_razuma.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
@@ -34,7 +40,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -51,6 +56,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -103,11 +110,14 @@ fun ProfileScreen(
     var errorMessage by remember { mutableStateOf("") }
     var showPasswordChangeDialog by remember { mutableStateOf(false) }
     var userProfileImage by remember { mutableStateOf<ImageBitmap?>(null) }
+    var isErrorToastSuccess by remember { mutableStateOf(false) }
+
 
     val userId = authManager.userId ?: 0
     val userFio = authManager.userFio ?: "Не указано"
     val roleName = authManager.roleName ?: "Не указана"
     val email = authManager.email ?: "Не указана"
+    val login = authManager.login ?: "Не указан"
     val roleId = authManager.roleId ?: 0
 
     LaunchedEffect(Unit) {
@@ -130,6 +140,13 @@ fun ProfileScreen(
         scope = coroutineScope,
         onResult = { byteArrays ->
             byteArrays.firstOrNull()?.let { imageBytes ->
+                val maxSizeBytes = 5 * 1024 * 1024
+                if (imageBytes.size > maxSizeBytes) {
+                    errorMessage = "Файл слишком большой (макс. 5MB)"
+                    isErrorToastSuccess = false
+                    showErrorToast = true
+                    return@let
+                }
 
                 isUploadingPhoto = true
                 coroutineScope.launch {
@@ -142,12 +159,17 @@ fun ProfileScreen(
                                     userProfileImage = bytes.toImageBitmap()
                                 }
                             }
+                            errorMessage = "Фото профиля успешно обновлено"
+                            isErrorToastSuccess = true
+                            showErrorToast = true
                         } else {
                             errorMessage = "Не удалось загрузить фото"
+                            isErrorToastSuccess = false
                             showErrorToast = true
                         }
                     } catch (e: Exception) {
                         errorMessage = "Ошибка: ${e.message}"
+                        isErrorToastSuccess = false
                         showErrorToast = true
                     } finally {
                         isUploadingPhoto = false
@@ -222,16 +244,14 @@ fun ProfileScreen(
                 }
 
                 if (isUploadingPhoto) {
+                    // Улучшенный спиннер загрузки с анимацией и эффектами
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color(0x80FFFFFF)),
+                            .background(Color(0x99FFFFFF)),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(
-                            color = PrimaryColor,
-                            modifier = Modifier.size(40.dp)
-                        )
+                        LoadingSpinner()
                     }
                 }
 
@@ -336,7 +356,7 @@ fun ProfileScreen(
                     InfoRow(
                         icon = painterResource(Res.drawable.info),
                         title = "Логин",
-                        value = authManager.accessToken?.let { "user_${userId}" } ?: "Не указан",
+                        value = login,
                         iconBackgroundColor = SecondaryColor
                     )
                 }
@@ -488,7 +508,7 @@ fun ProfileScreen(
                     .padding(16.dp),
                 elevation = 6.dp,
                 shape = RoundedCornerShape(8.dp),
-                backgroundColor = Color(0xFFFFDDDD)
+                backgroundColor = if (isErrorToastSuccess) Color(0xFFE8F5E9) else Color(0xFFFFDDDD)
             ) {
                 Row(
                     modifier = Modifier
@@ -498,8 +518,8 @@ fun ProfileScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Warning,
-                        contentDescription = "Ошибка",
-                        tint = Color(0xFFE53935),
+                        contentDescription = "Сообщение",
+                        tint = if (isErrorToastSuccess) PrimaryColor else Color(0xFFE53935),
                         modifier = Modifier.size(24.dp)
                     )
 
@@ -507,7 +527,7 @@ fun ProfileScreen(
 
                     Text(
                         text = errorMessage,
-                        color = Color(0xFFE53935),
+                        color = if (isErrorToastSuccess) PrimaryColor else Color(0xFFE53935),
                         modifier = Modifier.weight(1f)
                     )
 
@@ -517,7 +537,7 @@ fun ProfileScreen(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Закрыть",
-                            tint = Color(0xFFE53935)
+                            tint = if (isErrorToastSuccess) PrimaryColor else Color(0xFFE53935)
                         )
                     }
                 }
@@ -530,6 +550,59 @@ fun ProfileScreen(
             kotlinx.coroutines.delay(5000)
             showErrorToast = false
         }
+    }
+}
+
+@Composable
+fun LoadingSpinner() {
+    // Создаем бесконечную анимацию для вращения
+    val infiniteTransition = rememberInfiniteTransition()
+
+    // Анимация вращения
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+
+    // Анимация пульсации
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 1.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // Продвинутый спиннер с вращением
+        CircularProgressIndicator(
+            modifier = Modifier
+                .size(48.dp)
+                .rotate(rotation)
+                .scale(scale),
+            color = PrimaryColor,
+            strokeWidth = 3.dp
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Добавляем текст статуса
+        Text(
+            text = "Загрузка фото...",
+            color = PrimaryColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            fontFamily = Theme.fonts.nunito,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
