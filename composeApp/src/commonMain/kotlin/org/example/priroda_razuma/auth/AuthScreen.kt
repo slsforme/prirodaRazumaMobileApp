@@ -188,13 +188,13 @@ fun AuthScreen(
                     .fillMaxWidth()
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp) // Уменьшено расстояние между элементами
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .padding(vertical = 8.dp) // Уменьшено вертикальное пространство
-                        .size(120.dp) // Немного уменьшен размер логотипа
+                        .padding(vertical = 8.dp)
+                        .size(120.dp)
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
@@ -208,23 +208,22 @@ fun AuthScreen(
                     Image(
                         painter = painterResource(Res.drawable.nature),
                         contentDescription = "Logo",
-                        modifier = Modifier.size(80.dp), // Уменьшен размер изображения
+                        modifier = Modifier.size(80.dp),
                         contentScale = ContentScale.Fit
                     )
                 }
 
                 Text(
                     text = "Природа Разума",
-                    fontSize = 28.sp, // Немного уменьшен размер шрифта
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = DarkGreen,
                     fontFamily = Theme.fonts.nunito,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(8.dp)) // Уменьшен размер разделителя
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Поле логина
                 CustomTextField(
                     value = username,
                     onValueChange = { handleChange("username", it) },
@@ -235,7 +234,6 @@ fun AuthScreen(
                     showErrorMessage = usernameError.isNotEmpty()
                 )
 
-                // Поле пароля
                 CustomTextField(
                     value = password,
                     onValueChange = { handleChange("password", it) },
@@ -249,7 +247,6 @@ fun AuthScreen(
                     onPasswordVisibilityToggle = { isPasswordVisible = !isPasswordVisible }
                 )
 
-                // Фиксированная высота для блока сообщения об ошибке
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -406,10 +403,9 @@ fun CustomTextField(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp) // Уменьшена высота текстового поля
+                .height(64.dp)
         )
 
-        // Фиксированный контейнер для сообщения об ошибке с высотой 24dp
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(24.dp)) {
@@ -445,7 +441,7 @@ fun ErrorMessage(message: String, modifier: Modifier = Modifier) {
                 .fillMaxWidth()
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start // Изменено на Start для лучшего выравнивания
+            horizontalArrangement = Arrangement.Start
         ) {
             Icon(
                 imageVector = Icons.Rounded.Warning,

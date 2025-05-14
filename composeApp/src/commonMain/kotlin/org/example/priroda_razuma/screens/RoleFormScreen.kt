@@ -134,11 +134,18 @@ fun RoleFormScreen(
                     enabled = !isLoading,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
-                        unfocusedBorderColor = Color(0xFFCED4DA)
+                        unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E)
                     ),
                     shape = RoundedCornerShape(10.dp)
                 )
+
+
+
                 Spacer(modifier = Modifier.height(16.dp))
+
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
@@ -148,7 +155,10 @@ fun RoleFormScreen(
                     maxLines = 4,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
-                        unfocusedBorderColor = Color(0xFFCED4DA)
+                        unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E)
                     ),
                     shape = RoundedCornerShape(10.dp)
                 )

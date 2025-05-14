@@ -200,9 +200,7 @@ fun PatientListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
-                        .height(54.dp)
-                        .shadow(4.dp, RoundedCornerShape(16.dp))
-                        .clip(RoundedCornerShape(16.dp)),
+                        .height(54.dp),
                     placeholder = {
                         Text(
                             "Поиск по ФИО...",
@@ -241,7 +239,8 @@ fun PatientListScreen(
                     textStyle = androidx.compose.ui.text.TextStyle(
                         fontFamily = Theme.fonts.nunito,
                         fontSize = 16.sp
-                    )
+                    ),
+                    shape = RoundedCornerShape(16.dp)
                 )
 
                 when {

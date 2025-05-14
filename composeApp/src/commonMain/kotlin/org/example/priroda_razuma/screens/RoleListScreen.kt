@@ -224,7 +224,6 @@ fun RoleListScreen(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                // Поле поиска
                 OutlinedTextField(
                     value = searchTerm,
                     onValueChange = {
@@ -234,9 +233,7 @@ fun RoleListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
-                        .height(54.dp)
-                        .shadow(4.dp, RoundedCornerShape(16.dp))
-                        .clip(RoundedCornerShape(16.dp)),
+                        .height(54.dp),
                     placeholder = {
                         Text(
                             "Поиск по названию роли...",
@@ -275,10 +272,10 @@ fun RoleListScreen(
                     textStyle = androidx.compose.ui.text.TextStyle(
                         fontFamily = Theme.fonts.nunito,
                         fontSize = 16.sp
-                    )
+                    ),
+                    shape = RoundedCornerShape(16.dp)
                 )
 
-                // Отображение статусов и списка
                 when {
                     isLoading -> {
                         Box(
@@ -398,7 +395,6 @@ fun RoleListScreen(
                         }
                     }
                     else -> {
-                        // Список ролей
                         Column(
                             modifier = Modifier.fillMaxSize()
                         ) {
@@ -421,7 +417,6 @@ fun RoleListScreen(
                                 }
                             }
 
-                            // Пагинация внизу, если страниц больше одной
                             if (totalPages > 1) {
                                 Spacer(modifier = Modifier.height(16.dp))
                                 PaginationControls(
@@ -526,7 +521,6 @@ fun RoleItem(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                // Заголовок и ID роли
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -551,7 +545,6 @@ fun RoleItem(
                     )
                 }
 
-                // Описание роли, если есть
                 if (!role.description.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -566,13 +559,11 @@ fun RoleItem(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Кнопки действий
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Кнопка редактирования
                     Button(
                         onClick = onEdit,
                         colors = ButtonDefaults.buttonColors(

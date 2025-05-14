@@ -38,6 +38,8 @@ class AuthManager(private val client: HttpClient) {
     private var _photoUrl: String? = null
     private var _active: Boolean? = null
 
+    private var onLogoutAction: (() -> Unit)? = null
+
     val accessToken: String? get() = _accessToken
     val userId: Int? get() = _userId
     val roleId: Int? get() = _roleId
@@ -48,6 +50,9 @@ class AuthManager(private val client: HttpClient) {
     val photoUrl: String? get() = _photoUrl
     val active: Boolean? get() = null
 
+    fun setOnLogoutAction(action: () -> Unit) {
+        onLogoutAction = action
+    }
 
     suspend fun login(username: String, password: String): Result<TokenResponse> = withContext(Dispatchers.IO) {
         try {
@@ -98,28 +103,61 @@ class AuthManager(private val client: HttpClient) {
         }
     }
 
-    suspend fun getUserById(userId: Int): User = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/users/$userId") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+    private suspend fun <T> executeWithTokenRefresh(
+        requestBlock: suspend () -> T
+    ): T {
+        try {
+            return requestBlock()
+        } catch (e: ClientRequestException) {
+            if (e.response.status == HttpStatusCode.Unauthorized && _refreshToken != null) {
+                val refreshResult = refreshToken(_refreshToken!!)
+                if (refreshResult.isSuccess) {
+                    return try {
+                        requestBlock()
+                    } catch (retryException: Exception) {
+                        logout()
+                        onLogoutAction?.invoke()
+                        throw retryException
+                    }
+                } else {
+                    logout()
+                    onLogoutAction?.invoke()
+                    throw e
+                }
+            } else {
+                throw e
+            }
         }
-        response.body<User>()
+    }
+
+    suspend fun getUserById(userId: Int): User = withContext(Dispatchers.IO) {
+        executeWithTokenRefresh {
+            val response = client.get("${Configuration.BASE_API_URL}/users/$userId") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.body<User>()
+        }
     }
 
     suspend fun getAllUsers(): List<User> = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/users") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+        executeWithTokenRefresh {
+            val response = client.get("${Configuration.BASE_API_URL}/users") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.body<List<User>>()
         }
-        response.body<List<User>>()
     }
 
     suspend fun createUser(user: CreateUserRequest): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.post("${Configuration.BASE_API_URL}/users") {
-                contentType(ContentType.Application.Json)
-                setBody(user)
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.post("${Configuration.BASE_API_URL}/users") {
+                    contentType(ContentType.Application.Json)
+                    setBody(user)
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             Logger.e("Error creating user: ${e.message}")
             false
@@ -131,12 +169,14 @@ class AuthManager(private val client: HttpClient) {
         data: UpdateUserRequest
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.put("${Configuration.BASE_API_URL}/users/$userId") {
-                contentType(ContentType.Application.Json)
-                setBody(data)
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.put("${Configuration.BASE_API_URL}/users/$userId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(data)
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             Logger.e("Error updating user: ${e.message}")
             false
@@ -145,12 +185,14 @@ class AuthManager(private val client: HttpClient) {
 
     suspend fun updateUserPassword(userId: Int, password: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.put("${Configuration.BASE_API_URL}/users/$userId") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("password" to password))
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.put("${Configuration.BASE_API_URL}/users/$userId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf("password" to password))
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             Logger.e("Error updating user: ${e.message}")
             false
@@ -159,10 +201,12 @@ class AuthManager(private val client: HttpClient) {
 
     suspend fun deleteUser(userId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.delete("${Configuration.BASE_API_URL}/users/$userId") {
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.delete("${Configuration.BASE_API_URL}/users/$userId") {
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             Logger.e("Error deleting user: ${e.message}")
             false
@@ -170,25 +214,31 @@ class AuthManager(private val client: HttpClient) {
     }
 
     suspend fun getRoleById(roleId: Int): Role = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/roles/$roleId") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+        executeWithTokenRefresh {
+            val response = client.get("${Configuration.BASE_API_URL}/roles/$roleId") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.body<Role>()
         }
-        response.body<Role>()
     }
 
     suspend fun getAllRoles(): List<Role> = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/roles") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+        executeWithTokenRefresh {
+            val response = client.get("${Configuration.BASE_API_URL}/roles") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.body<List<Role>>()
         }
-        response.body<List<Role>>()
     }
 
     suspend fun deleteRole(roleId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.delete("${Configuration.BASE_API_URL}/roles/$roleId") {
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.delete("${Configuration.BASE_API_URL}/roles/$roleId") {
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             false
         }
@@ -196,12 +246,14 @@ class AuthManager(private val client: HttpClient) {
 
     suspend fun createRole(role: Role): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.post("${Configuration.BASE_API_URL}/roles") {
-                contentType(ContentType.Application.Json)
-                setBody(role)
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.post("${Configuration.BASE_API_URL}/roles") {
+                    contentType(ContentType.Application.Json)
+                    setBody(role)
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             false
         }
@@ -209,12 +261,14 @@ class AuthManager(private val client: HttpClient) {
 
     suspend fun updateRole(roleId: Int, role: Role): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.put("${Configuration.BASE_API_URL}/roles/$roleId") {
-                contentType(ContentType.Application.Json)
-                setBody(role)
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.put("${Configuration.BASE_API_URL}/roles/$roleId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(role)
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             false
         }
@@ -222,21 +276,23 @@ class AuthManager(private val client: HttpClient) {
 
     suspend fun uploadUserPhoto(userId: Int, photoBytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.post("${Configuration.BASE_API_URL}/users/$userId/photo") {
-                contentType(ContentType.MultiPart.FormData)
-                setBody(MultiPartFormDataContent(formData {
-                    append(
-                        "photo",
-                        photoBytes,
-                        Headers.build {
-                            append(HttpHeaders.ContentType, "image/jpeg")
-                            append(HttpHeaders.ContentDisposition, "filename=\"user_photo.jpg\"")
-                        }
-                    )
-                }))
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.post("${Configuration.BASE_API_URL}/users/$userId/photo") {
+                    contentType(ContentType.MultiPart.FormData)
+                    setBody(MultiPartFormDataContent(formData {
+                        append(
+                            "photo",
+                            photoBytes,
+                            Headers.build {
+                                append(HttpHeaders.ContentType, "image/jpeg")
+                                append(HttpHeaders.ContentDisposition, "filename=\"user_photo.jpg\"")
+                            }
+                        )
+                    }))
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             println("Error uploading photo: ${e.message}")
             false
@@ -245,18 +301,20 @@ class AuthManager(private val client: HttpClient) {
 
     suspend fun getUserPhoto(userId: Int): ByteArray? = withContext(Dispatchers.IO) {
         try {
-            val response = client.get("${Configuration.BASE_API_URL}/users/$userId/photo") {
-                _accessToken?.let {
-                    headers.append(HttpHeaders.Authorization, "Bearer $it")
+            executeWithTokenRefresh {
+                val response = client.get("${Configuration.BASE_API_URL}/users/$userId/photo") {
+                    _accessToken?.let {
+                        headers.append(HttpHeaders.Authorization, "Bearer $it")
+                    }
                 }
-            }
 
-            return@withContext when (response.status) {
-                HttpStatusCode.OK -> response.body<ByteArray>()
-                HttpStatusCode.NotFound -> null
-                else -> {
-                    println("Unexpected response code: ${response.status}")
-                    null
+                when (response.status) {
+                    HttpStatusCode.OK -> response.body<ByteArray>()
+                    HttpStatusCode.NotFound -> null
+                    else -> {
+                        println("Unexpected response code: ${response.status}")
+                        null
+                    }
                 }
             }
         } catch (e: ClientRequestException) {
@@ -273,15 +331,17 @@ class AuthManager(private val client: HttpClient) {
 
     suspend fun updateUserPassword(userId: Int, oldPassword: String, newPassword: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.put("${Configuration.BASE_API_URL}/users/$userId/password") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf(
-                    "old_password" to oldPassword,
-                    "new_password" to newPassword
-                ))
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.put("${Configuration.BASE_API_URL}/users/$userId/password") {
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf(
+                        "old_password" to oldPassword,
+                        "new_password" to newPassword
+                    ))
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             false
         }
@@ -301,20 +361,24 @@ class AuthManager(private val client: HttpClient) {
     }
 
     suspend fun getAllPatients(): List<Patient> = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/patients") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+        executeWithTokenRefresh {
+            val response = client.get("${Configuration.BASE_API_URL}/patients") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.body<List<Patient>>()
         }
-        response.body<List<Patient>>()
     }
 
     suspend fun createPatient(patient: Patient): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.post("${Configuration.BASE_API_URL}/patients") {
-                contentType(ContentType.Application.Json)
-                setBody(patient)
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.post("${Configuration.BASE_API_URL}/patients") {
+                    contentType(ContentType.Application.Json)
+                    setBody(patient)
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             false
         }
@@ -322,55 +386,67 @@ class AuthManager(private val client: HttpClient) {
 
     suspend fun updatePatient(patientId: Int, patient: Patient): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.put("${Configuration.BASE_API_URL}/patients/$patientId") {
-                contentType(ContentType.Application.Json)
-                setBody(patient)
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.put("${Configuration.BASE_API_URL}/patients/$patientId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(patient)
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             false
         }
     }
 
     suspend fun getPatientById(patientId: Int): Patient = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/patients/$patientId") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+        executeWithTokenRefresh {
+            val response = client.get("${Configuration.BASE_API_URL}/patients/$patientId") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.body<Patient>()
         }
-        response.body<Patient>()
     }
 
     suspend fun deletePatient(patientId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.delete("${Configuration.BASE_API_URL}/patients/$patientId") {
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.delete("${Configuration.BASE_API_URL}/patients/$patientId") {
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             false
         }
     }
 
     suspend fun getAllDocuments(): List<Document> = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/documents") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+        executeWithTokenRefresh {
+            val response = client.get("${Configuration.BASE_API_URL}/documents") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.body<List<Document>>()
         }
-        response.body<List<Document>>()
     }
 
     suspend fun getDocumentById(documentId: Int): Document = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/documents/$documentId") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+        executeWithTokenRefresh {
+            val response = client.get("${Configuration.BASE_API_URL}/documents/$documentId") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.body<Document>()
         }
-        response.body<Document>()
     }
 
     suspend fun deleteDocument(documentId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.delete("${Configuration.BASE_API_URL}/documents/$documentId") {
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.delete("${Configuration.BASE_API_URL}/documents/$documentId") {
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             println("Error deleting document: ${e.message}")
             false
@@ -380,10 +456,12 @@ class AuthManager(private val client: HttpClient) {
 
     suspend fun deleteUserPhoto(userId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            val response = client.delete("${Configuration.BASE_API_URL}/users/$userId/photo") {
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            executeWithTokenRefresh {
+                val response = client.delete("${Configuration.BASE_API_URL}/users/$userId/photo") {
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+                }
+                response.status.value in 200..299
             }
-            response.status.value in 200..299
         } catch (e: Exception) {
             println("Error deleting user's photo: ${e.message}")
             false
@@ -391,37 +469,41 @@ class AuthManager(private val client: HttpClient) {
     }
 
     suspend fun downloadDocument(documentId: Int): ByteArray = withContext(Dispatchers.IO) {
-        val response = client.get("${Configuration.BASE_API_URL}/documents/$documentId/download") {
-            _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+        executeWithTokenRefresh {
+            val response = client.get("${Configuration.BASE_API_URL}/documents/$documentId/download") {
+                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
+            }
+            response.body()
         }
-        response.body()
     }
 
     suspend fun downloadDocumentWithFilename(documentId: Int): Pair<ByteArray, String> = withContext(Dispatchers.IO) {
         try {
-            val response = client.get("${Configuration.BASE_API_URL}/documents/$documentId/download") {
-                _accessToken?.let { headers.append("Authorization", "Bearer $it") }
-            }
-
-            val contentDisposition = response.headers["Content-Disposition"]
-            var filename = "download"
-
-            if (contentDisposition != null) {
-                val filenameMatch = Regex("filename=(.*)").find(contentDisposition)
-                if (filenameMatch != null && filenameMatch.groupValues.size > 1) {
-                    filename = filenameMatch.groupValues[1]
-                    if (filename.startsWith("\"") && filename.endsWith("\"")) {
-                        filename = filename.substring(1, filename.length - 1)
-                    }
-                    filename = filename.replace("+", " ")
-                        .replace("%([0-9A-Fa-f]{2})".toRegex()) { matchResult ->
-                            val hexValue = matchResult.groupValues[1]
-                            hexValue.toInt(16).toChar().toString()
-                        }
+            executeWithTokenRefresh {
+                val response = client.get("${Configuration.BASE_API_URL}/documents/$documentId/download") {
+                    _accessToken?.let { headers.append("Authorization", "Bearer $it") }
                 }
-            }
 
-            Pair(response.body<ByteArray>(), filename)
+                val contentDisposition = response.headers["Content-Disposition"]
+                var filename = "download"
+
+                if (contentDisposition != null) {
+                    val filenameMatch = Regex("filename=(.*)").find(contentDisposition)
+                    if (filenameMatch != null && filenameMatch.groupValues.size > 1) {
+                        filename = filenameMatch.groupValues[1]
+                        if (filename.startsWith("\"") && filename.endsWith("\"")) {
+                            filename = filename.substring(1, filename.length - 1)
+                        }
+                        filename = filename.replace("+", " ")
+                            .replace("%([0-9A-Fa-f]{2})".toRegex()) { matchResult ->
+                                val hexValue = matchResult.groupValues[1]
+                                hexValue.toInt(16).toChar().toString()
+                            }
+                    }
+                }
+
+                Pair(response.body<ByteArray>(), filename)
+            }
         } catch (e: Exception) {
             println("Error downloading document: ${e.message}")
             throw e

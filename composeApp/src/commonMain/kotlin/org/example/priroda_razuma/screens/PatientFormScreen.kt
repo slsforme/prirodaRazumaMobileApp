@@ -581,7 +581,10 @@ fun PatientFormScreen(
                     isError = errors.containsKey("lastName"),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
-                        unfocusedBorderColor = Color(0xFFCED4DA)
+                        unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E),
                     ),
                     shape = RoundedCornerShape(10.dp)
                 )
@@ -604,7 +607,10 @@ fun PatientFormScreen(
                     isError = errors.containsKey("firstName"),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
-                        unfocusedBorderColor = Color(0xFFCED4DA)
+                        unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E),
                     ),
                     shape = RoundedCornerShape(10.dp)
                 )
@@ -627,7 +633,10 @@ fun PatientFormScreen(
                     isError = errors.containsKey("patronymic"),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
-                        unfocusedBorderColor = Color(0xFFCED4DA)
+                        unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E),
                     ),
                     shape = RoundedCornerShape(10.dp)
                 )

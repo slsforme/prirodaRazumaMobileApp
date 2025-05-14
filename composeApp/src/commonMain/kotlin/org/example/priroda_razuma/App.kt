@@ -24,12 +24,10 @@ import org.example.priroda_razuma.screens.UserFormScreen
 import org.example.priroda_razuma.screens.UserListScreen
 import org.example.priroda_razuma.ui.components.SideBar
 import org.example.priroda_razuma.ui.screens.*
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 private val PaleGreen = Color(0xFFE8F5E9)
 
 @Composable
-@Preview
 fun App() {
     val httpClient = HttpClientProvider.client
 
@@ -38,7 +36,7 @@ fun App() {
     var tokenResponse by remember { mutableStateOf<TokenResponse?>(null) }
     var authError by remember { mutableStateOf<String?>(null) }
 
-    var currentScreen by remember { mutableStateOf(Screen.Profile) } // Изменено с Dashboard на Profile
+    var currentScreen by remember { mutableStateOf(Screen.Profile) }
     var isSidebarVisible by remember { mutableStateOf(true) }
 
     MaterialTheme {
@@ -165,7 +163,6 @@ fun App() {
                                     authManager = authManager,
                                     onNavigateToCreateDocument = { isCreatingDocument = true },
                                     onNavigateToEditDocument = {}
-                                    // onNavigateToEditPatient = { roleId -> editingDocumentId = roleId }
                                 )
                             }
                         }
@@ -240,7 +237,7 @@ fun App() {
                         tokenResponse = response
                         isAuthenticated = true
                         authError = null
-                        currentScreen = Screen.Profile // Устанавливаем экран профиля при успешном входе
+                        currentScreen = Screen.Profile
                     },
                     onAuthError = { error ->
                         authError = error

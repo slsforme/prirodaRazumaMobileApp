@@ -68,6 +68,27 @@ fun SideBar(
         label = "sidebarOffset"
     )
 
+    val overlayAlpha by animateFloatAsState(
+        targetValue = if (isVisible) 0.5f else 0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "overlayAlpha"
+    )
+
+    // Добавляем оверлей на весь экран, который будет видим только когда сайдбар открыт
+    if (isVisible) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = overlayAlpha))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onToggleVisibility
+                )
+                .zIndex(5f)
+        )
+    }
+
     Box(
         modifier = modifier
             .fillMaxHeight()
@@ -158,6 +179,7 @@ fun SideBar(
                     }
                 }
 
+                // Остальной код без изменений
                 Divider(
                     color = DividerColor,
                     thickness = 1.dp,
@@ -298,6 +320,7 @@ fun SideBar(
         }
     }
 }
+
 
 @Composable
 fun NavigationItem(

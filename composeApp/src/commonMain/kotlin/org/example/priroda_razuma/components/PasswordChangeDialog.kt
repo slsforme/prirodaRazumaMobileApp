@@ -170,9 +170,7 @@ fun PasswordChangeDialog(
     LaunchedEffect(Unit) {
         try {
             oldPasswordFocusRequester.requestFocus()
-        } catch (e: Exception) {
-            // Игнорируем, если не можем установить фокус
-        }
+        } catch (e: Exception) { }
     }
 
     Dialog(
@@ -192,7 +190,6 @@ fun PasswordChangeDialog(
                     .fillMaxWidth()
                     .padding(24.dp)
             ) {
-                // Заголовок
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -238,7 +235,6 @@ fun PasswordChangeDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Поле текущего пароля
                 OutlinedTextField(
                     value = oldPassword,
                     onValueChange = {
@@ -391,7 +387,6 @@ fun PasswordChangeDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Кнопки действий
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -444,7 +439,6 @@ fun PasswordChangeDialog(
             }
         }
 
-        // Toast сообщение
         AnimatedVisibility(
             visible = showToast,
             enter = fadeIn(),

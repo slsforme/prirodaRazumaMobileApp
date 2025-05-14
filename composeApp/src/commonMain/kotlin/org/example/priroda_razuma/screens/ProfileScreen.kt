@@ -555,10 +555,8 @@ fun ProfileScreen(
 
 @Composable
 fun LoadingSpinner() {
-    // Создаем бесконечную анимацию для вращения
     val infiniteTransition = rememberInfiniteTransition()
 
-    // Анимация вращения
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
@@ -568,7 +566,6 @@ fun LoadingSpinner() {
         )
     )
 
-    // Анимация пульсации
     val scale by infiniteTransition.animateFloat(
         initialValue = 0.8f,
         targetValue = 1.1f,
@@ -578,34 +575,36 @@ fun LoadingSpinner() {
         )
     )
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        // Продвинутый спиннер с вращением
-        CircularProgressIndicator(
-            modifier = Modifier
-                .size(48.dp)
-                .rotate(rotation)
-                .scale(scale),
-            color = PrimaryColor,
-            strokeWidth = 3.dp
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .size(48.dp)
+                    .rotate(rotation)
+                    .scale(scale),
+                color = PrimaryColor,
+                strokeWidth = 3.dp
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Добавляем текст статуса
-        Text(
-            text = "Загрузка фото...",
-            color = PrimaryColor,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            fontFamily = Theme.fonts.nunito,
-            textAlign = TextAlign.Center
-        )
+            Text(
+                text = "Загрузка фото...",
+                color = PrimaryColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = Theme.fonts.nunito,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
-
 @Composable
 fun InfoRow(
     icon: Any,
@@ -617,7 +616,6 @@ fun InfoRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Иконка
         Box(
             modifier = Modifier
                 .size(48.dp)

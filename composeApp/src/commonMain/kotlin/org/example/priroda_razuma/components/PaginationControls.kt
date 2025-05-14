@@ -167,7 +167,6 @@ fun PaginationControls(
                                 singleLine = true
                             )
 
-                            // Кнопка подтверждения
                             IconButton(
                                 onClick = {
                                     submitPageNumber(
@@ -227,7 +226,6 @@ fun PaginationControls(
                     }
                 }
 
-                // Кнопка вперед
                 NavigationButton(
                     enabled = currentPage < totalPages,
                     onClick = { onPageChange(currentPage + 1) }
@@ -242,7 +240,6 @@ fun PaginationControls(
         }
     }
 
-    // Отображение ошибки под компонентом
     AnimatedVisibility(
         visible = errorMessage.value != null,
         enter = fadeIn(),
@@ -262,7 +259,6 @@ fun PaginationControls(
         }
     }
 
-    // Компактные точки пагинации для быстрой навигации
     if (totalPages > 3) {
         PageDotsIndicator(
             currentPage = currentPage,
@@ -293,7 +289,6 @@ private fun submitPageNumber(
             errorMessage.value = "Доступно: 1-$totalPages"
         }
         else -> {
-            // Переход на указанную страницу
             onPageChange(pageNumber)
             isEditingPage.value = false
             errorMessage.value = null
@@ -348,7 +343,6 @@ fun PageDotsIndicator(
             )
 
             if (startDot > 2) {
-                // Показываем троеточие
                 Text(
                     text = "...",
                     modifier = Modifier.padding(horizontal = 2.dp),

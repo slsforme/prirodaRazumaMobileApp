@@ -1,0 +1,242 @@
+@startuml "Frontend Architecture"
+
+' Цветовая схема для диаграммы
+!define COMPONENT_COLOR #A9DCDF
+!define SERVICE_COLOR #C8F7C5
+!define TYPE_COLOR #FFEB99
+!define STYLE_COLOR #FFD2D2
+!define INTERFACE_COLOR #D8CEF6
+
+' Использование стереотипов для визуального разделения
+skinparam class {
+    BackgroundColor<<Component>> COMPONENT_COLOR
+    BackgroundColor<<Service>> SERVICE_COLOR
+    BackgroundColor<<Type>> TYPE_COLOR
+    BackgroundColor<<Style>> STYLE_COLOR
+    BackgroundColor<<Interface>> INTERFACE_COLOR
+    ArrowColor #666666
+    BorderColor #666666
+}
+
+title "Frontend Architecture - React/TypeScript"
+
+' Корневые компоненты
+package "components" {
+    class LoginForm <<Component>> {
+        + username: string
+        + password: string
+        + onSubmit(): void
+        + validate(): boolean
+    }
+}
+
+' Сервисы
+package "services" {
+    class ApiService <<Service>> {
+        + baseUrl: string
+        + headers: object
+        + get(url: string): Promise<any>
+        + post(url: string, data: any): Promise<any>
+        + put(url: string, data: any): Promise<any>
+        + delete(url: string): Promise<any>
+    }
+
+    class UtilsService <<Service>> {
+        + formatDate(date: Date): string
+        + parseDate(dateString: string): Date
+        + formatCurrency(value: number): string
+        + validateEmail(email: string): boolean
+    }
+}
+
+' Стили
+package "styles" {
+    class IndexCss <<Style>> {
+        ' CSS styles
+    }
+}
+
+' Типы
+package "types" {
+    class AuthTypes <<Type>> {
+        + interface User
+        + interface LoginRequest
+        + interface LoginResponse
+        + interface TokenPayload
+        + type AuthStatus
+    }
+}
+
+' Панель
+package "panel" {
+    package "panel.components" {
+        package "panel.components.charts" {
+            class ChartsComponent <<Component>> {
+                ' Chart components
+            }
+        }
+
+        package "panel.components.interfaces" {
+            class AccessDenied <<Component>> {
+                + message: string
+                + redirect(): void
+            }
+
+            class DocumentChart <<Component>> {
+                + data: DocumentChartData
+                + renderChart(): void
+            }
+
+            class PasswordChangeModal <<Component>> {
+                + oldPassword: string
+                + newPassword: string
+                + confirmPassword: string
+                + onSubmit(): void
+                + validate(): boolean
+            }
+
+            class PersonalDataModal <<Component>> {
+                + userData: UserPersonalData
+                + onSubmit(): void
+                + validate(): boolean
+            }
+
+            class SideBar <<Component>> {
+                + menuItems: MenuItem[]
+                + activeItem: string
+                + onItemClick(item: string): void
+            }
+        }
+    }
+}
+
+' Пациенты
+package "patients" {
+    package "patients.types" {
+        class PatientForm <<Component>> {
+            + patient: Patient
+            + onSubmit(): void
+            + validate(): boolean
+        }
+
+        class PatientList <<Component>> {
+            + patients: Patient[]
+            + loading: boolean
+            + error: string
+            + fetchPatients(): void
+            + deletePatient(id: string): void
+        }
+    }
+
+    class PatientsUtils <<Service>> {
+        + sortPatients(patients: Patient[]): Patient[]
+        + filterPatients(patients: Patient[], query: string): Patient[]
+    }
+}
+
+' Роли
+package "roles" {
+    package "roles.types" {
+        class RoleForm <<Component>> {
+            + role: Role
+            + onSubmit(): void
+            + validate(): boolean
+        }
+
+        class RoleList <<Component>> {
+            + roles: Role[]
+            + loading: boolean
+            + error: string
+            + fetchRoles(): void
+            + deleteRole(id: string): void
+        }
+    }
+}
+
+' Пользователи
+package "users" {
+    package "users.types" {
+        class UserForm <<Component>> {
+            + user: User
+            + onSubmit(): void
+            + validate(): boolean
+        }
+
+        class UserList <<Component>> {
+            + users: User[]
+            + loading: boolean
+            + error: string
+            + fetchUsers(): void
+            + deleteUser(id: string): void
+        }
+    }
+}
+
+' Типы документов
+package "types" {
+    class DocumentForm <<Component>> {
+        + document: Document
+        + onSubmit(): void
+        + validate(): boolean
+    }
+
+    class DocumentList <<Component>> {
+        + documents: Document[]
+        + loading: boolean
+        + error: string
+        + fetchDocuments(): void
+        + deleteDocument(id: string): void
+    }
+
+    class ChartsPage <<Component>> {
+        + chartData: ChartData
+        + renderCharts(): void
+    }
+
+    class PersonalCabinet <<Component>> {
+        + userData: User
+        + fetchUserData(): void
+        + updateUserData(data: User): void
+    }
+}
+
+' Приложение
+class App <<Component>> {
+    + render(): JSX.Element
+}
+
+class Main <<Component>> {
+    + render(): JSX.Element
+}
+
+' Связи
+LoginForm --> ApiService: использует
+PatientList --> ApiService: использует
+DocumentList --> ApiService: использует
+UserList --> ApiService: использует
+RoleList --> ApiService: использует
+
+PatientForm ..> AuthTypes: использует типы
+UserForm ..> AuthTypes: использует типы
+LoginForm ..> AuthTypes: использует типы
+
+App --> SideBar: включает
+App --> Main: включает
+
+Main --> PatientList: маршрутизирует к
+Main --> PatientForm: маршрутизирует к
+Main --> DocumentList: маршрутизирует к
+Main --> DocumentForm: маршрутизирует к
+Main --> UserList: маршрутизирует к
+Main --> UserForm: маршрутизирует к
+Main --> RoleList: маршрутизирует к
+Main --> RoleForm: маршрутизирует к
+Main --> ChartsPage: маршрутизирует к
+Main --> PersonalCabinet: маршрутизирует к
+
+SideBar --> PersonalDataModal: открывает
+PersonalCabinet --> PasswordChangeModal: открывает
+
+ChartsPage --> DocumentChart: использует
+
+@enduml

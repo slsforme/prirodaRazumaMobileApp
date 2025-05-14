@@ -284,9 +284,7 @@ fun DocumentListScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(54.dp)
-                            .shadow(4.dp, RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp)),
+                            .height(54.dp),
                         placeholder = {
                             Text(
                                 "Поиск по названию...",
@@ -325,7 +323,8 @@ fun DocumentListScreen(
                         textStyle = androidx.compose.ui.text.TextStyle(
                             fontFamily = Theme.fonts.nunito,
                             fontSize = 16.sp
-                        )
+                        ),
+                        shape = RoundedCornerShape(16.dp)
                     )
 
                     Box {

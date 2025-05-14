@@ -1,0 +1,331 @@
+@startuml "Backend Architecture"
+
+' Цветовая схема для диаграммы
+!define MODEL_COLOR #A9DCDF
+!define SERVICE_COLOR #C8F7C5
+!define REPOSITORY_COLOR #FFEB99
+!define SCHEMA_COLOR #FFD2D2
+!define ROUTE_COLOR #D8CEF6
+!define AUTH_COLOR #F9D9C9
+!define UTIL_COLOR #D5D5D5
+
+' Использование стереотипов для визуального разделения
+skinparam class {
+    BackgroundColor<<Model>> MODEL_COLOR
+    BackgroundColor<<Service>> SERVICE_COLOR
+    BackgroundColor<<Repository>> REPOSITORY_COLOR
+    BackgroundColor<<Schema>> SCHEMA_COLOR
+    BackgroundColor<<Route>> ROUTE_COLOR
+    BackgroundColor<<Auth>> AUTH_COLOR
+    BackgroundColor<<Util>> UTIL_COLOR
+    ArrowColor #666666
+    BorderColor #666666
+}
+
+title "Backend Architecture - Python"
+
+' Auth модуль
+package "auth" {
+    class AuthModule <<Auth>> {
+        + init_app(app)
+        + login(username, password)
+        + logout()
+        + register(user_data)
+        + verify_token(token)
+    }
+
+    class Schema <<Schema>> {
+        + UserSchema
+        + LoginSchema
+        + TokenSchema
+    }
+
+    class Utils <<Util>> {
+        + generate_token(user_id)
+        + hash_password(password)
+        + verify_password(password, hashed)
+    }
+}
+
+' Модели
+package "models" {
+    class BaseModel <<Model>> {
+        + id
+        + created_at
+        + updated_at
+        + save()
+        + delete()
+        + to_dict()
+    }
+
+    class UserModel <<Model>> {
+        + username
+        + email
+        + password_hash
+        + role_id
+        + is_active
+        + last_login
+        + set_password(password)
+        + verify_password(password)
+        + get_permissions()
+    }
+
+    class PatientModel <<Model>> {
+        + name
+        + birthdate
+        + gender
+        + contact_info
+        + medical_history
+        + get_documents()
+    }
+
+    class DocumentModel <<Model>> {
+        + title
+        + content
+        + patient_id
+        + author_id
+        + doc_type
+        + tags
+    }
+
+    class RoleModel <<Model>> {
+        + name
+        + description
+        + permissions
+        + get_users()
+    }
+}
+
+' Репозитории
+package "repositories" {
+    class BaseRepository <<Repository>> {
+        + get_by_id(id)
+        + get_all()
+        + create(data)
+        + update(id, data)
+        + delete(id)
+    }
+
+    class UserRepository <<Repository>> {
+        + get_by_username(username)
+        + get_by_email(email)
+        + get_with_role(id)
+        + update_last_login(id)
+    }
+
+    class PatientRepository <<Repository>> {
+        + get_patients_by_doctor(doctor_id)
+        + search_patients(query)
+    }
+
+    class DocumentRepository <<Repository>> {
+        + get_by_patient(patient_id)
+        + get_by_author(author_id)
+        + search_documents(query)
+    }
+
+    class RoleRepository <<Repository>> {
+        + get_by_name(name)
+    }
+}
+
+' Схемы
+package "schemas" {
+    class BaseSchema <<Schema>> {
+        + id
+        + created_at
+        + updated_at
+    }
+
+    class UserSchema <<Schema>> {
+        + username
+        + email
+        + role_id
+        + is_active
+    }
+
+    class PatientSchema <<Schema>> {
+        + name
+        + birthdate
+        + gender
+        + contact_info
+    }
+
+    class DocumentSchema <<Schema>> {
+        + title
+        + content
+        + patient_id
+        + author_id
+        + doc_type
+        + tags
+    }
+
+    class RoleSchema <<Schema>> {
+        + name
+        + description
+        + permissions
+    }
+
+    class AnalyticsSchema <<Schema>> {
+        + start_date
+        + end_date
+        + document_type
+        + author_id
+    }
+}
+
+' Маршруты
+package "routing" {
+    class BaseRoute <<Route>> {
+        + register_routes()
+    }
+
+    class UsersRoute <<Route>> {
+        + get_users()
+        + get_user(id)
+        + create_user()
+        + update_user(id)
+        + delete_user(id)
+    }
+
+    class PatientsRoute <<Route>> {
+        + get_patients()
+        + get_patient(id)
+        + create_patient()
+        + update_patient(id)
+        + delete_patient(id)
+    }
+
+    class DocumentsRoute <<Route>> {
+        + get_documents()
+        + get_document(id)
+        + create_document()
+        + update_document(id)
+        + delete_document(id)
+    }
+
+    class RolesRoute <<Route>> {
+        + get_roles()
+        + get_role(id)
+        + create_role()
+        + update_role(id)
+        + delete_role(id)
+    }
+
+    class AnalyticsRoute <<Route>> {
+        + get_document_stats()
+        + get_patient_stats()
+        + get_activity_log()
+    }
+
+    class HelperRoute <<Route>> {
+        + health_check()
+        + version()
+    }
+
+    class UtilsRoute <<Route>> {
+        + parse_date(date_string)
+        + validate_json(json_data)
+    }
+}
+
+' Сервисы
+package "services" {
+    class BaseService <<Service>> {
+        + repository
+        + get_by_id(id)
+        + get_all()
+        + create(data)
+        + update(id, data)
+        + delete(id)
+    }
+
+    class UserService <<Service>> {
+        + get_by_username(username)
+        + get_by_email(email)
+        + authenticate(username, password)
+        + register(user_data)
+    }
+
+    class PatientService <<Service>> {
+        + get_patients_by_doctor(doctor_id)
+        + search_patients(query)
+    }
+
+    class DocumentService <<Service>> {
+        + get_by_patient(patient_id)
+        + get_by_author(author_id)
+        + search_documents(query)
+    }
+
+    class RoleService <<Service>> {
+        + get_by_name(name)
+        + assign_role_to_user(user_id, role_id)
+    }
+}
+
+' Задачи
+package "tasks" {
+    class TaskManager <<Service>> {
+        + schedule_task(task_func, **kwargs)
+        + run_periodic_tasks()
+        + cancel_task(task_id)
+    }
+}
+
+' Связи
+BaseModel <|-- UserModel
+BaseModel <|-- PatientModel
+BaseModel <|-- DocumentModel
+BaseModel <|-- RoleModel
+
+BaseRepository <|-- UserRepository
+BaseRepository <|-- PatientRepository
+BaseRepository <|-- DocumentRepository
+BaseRepository <|-- RoleRepository
+
+BaseSchema <|-- UserSchema
+BaseSchema <|-- PatientSchema
+BaseSchema <|-- DocumentSchema
+BaseSchema <|-- RoleSchema
+
+BaseRoute <|-- UsersRoute
+BaseRoute <|-- PatientsRoute
+BaseRoute <|-- DocumentsRoute
+BaseRoute <|-- RolesRoute
+BaseRoute <|-- AnalyticsRoute
+
+BaseService <|-- UserService
+BaseService <|-- PatientService
+BaseService <|-- DocumentService
+BaseService <|-- RoleService
+
+UserRepository --> UserModel: использует
+PatientRepository --> PatientModel: использует
+DocumentRepository --> DocumentModel: использует
+RoleRepository --> RoleModel: использует
+
+UserService --> UserRepository: использует
+PatientService --> PatientRepository: использует
+DocumentService --> DocumentRepository: использует
+RoleService --> RoleRepository: использует
+
+UsersRoute --> UserService: использует
+UsersRoute --> UserSchema: использует
+PatientsRoute --> PatientService: использует
+PatientsRoute --> PatientSchema: использует
+DocumentsRoute --> DocumentService: использует
+DocumentsRoute --> DocumentSchema: использует
+RolesRoute --> RoleService: использует
+RolesRoute --> RoleSchema: использует
+AnalyticsRoute --> AnalyticsSchema: использует
+
+AuthModule --> UserService: использует
+AuthModule --> Schema: использует
+
+UserModel "many" --> "one" RoleModel: имеет
+PatientModel "one" --> "many" DocumentModel: имеет
+DocumentModel "many" --> "one" UserModel: автор
+DocumentModel "many" --> "one" PatientModel: относится к
+
+@enduml

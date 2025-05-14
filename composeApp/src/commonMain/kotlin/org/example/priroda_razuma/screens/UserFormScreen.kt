@@ -97,7 +97,6 @@ fun UserFormScreen(
     var showRoleDropdown by remember { mutableStateOf(false) }
     var showStatusDropdown by remember { mutableStateOf(false) }
 
-    // Photo related state
     var userProfileImage by remember { mutableStateOf<ImageBitmap?>(null) }
     var isPhotoSelected by remember { mutableStateOf(false) }
     var isUploadingPhoto by remember { mutableStateOf(false) }
@@ -105,7 +104,6 @@ fun UserFormScreen(
     var isPhotoDeleted by remember { mutableStateOf(false) }
     var photoBytes by remember { mutableStateOf<ByteArray?>(null) }
 
-    // Error states
     var error by remember { mutableStateOf<String?>(null) }
     var lastNameError by remember { mutableStateOf<String?>(null) }
     var firstNameError by remember { mutableStateOf<String?>(null) }
@@ -123,12 +121,15 @@ fun UserFormScreen(
         scope = coroutineScope,
         onResult = { byteArrays ->
             byteArrays.firstOrNull()?.let { imageBytes ->
-
-
-                photoBytes = imageBytes
-                userProfileImage = imageBytes.toImageBitmap()
-                isPhotoSelected = true
-                isPhotoDeleted = false
+                if (imageBytes.size <= 5 * 1024 * 1024) {
+                    photoBytes = imageBytes
+                    userProfileImage = imageBytes.toImageBitmap()
+                    isPhotoSelected = true
+                    isPhotoDeleted = false
+                } else {
+                    errorMessage = "Размер фото не должен превышать 5 МБ"
+                    showErrorToast = true
+                }
             }
         }
     )
@@ -166,7 +167,6 @@ fun UserFormScreen(
         }
     }
 
-    // Validation functions
     fun validateLastName(value: String): String? {
         val cyrillicRegex = Regex("^[а-яА-ЯёЁ\\- ]+$")
         return when {
@@ -306,13 +306,6 @@ fun UserFormScreen(
                     val newUserId = authManager.createUser(user)
 
                     if (newUserId != null) {
-                        if (isPhotoSelected && photoBytes != null) {
-                            val photoSuccess = authManager.uploadUserPhoto(user.id, photoBytes!!)
-                            if (!photoSuccess) {
-                                errorMessage = "Не удалось загрузить фото"
-                                showErrorToast = true
-                            }
-                        }
                         onNavigateBack()
                     } else {
                         error = "Ошибка при создании пользователя"
@@ -363,7 +356,6 @@ fun UserFormScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Error dialog
                 if (error != null) {
                     AlertDialog(
                         onDismissRequest = { error = null },
@@ -379,10 +371,8 @@ fun UserFormScreen(
                     )
                 }
 
-                // Toast error message
                 if (showErrorToast) {
                     LaunchedEffect(showErrorToast) {
-                        // Automatically hide toast after 3 seconds
                         kotlinx.coroutines.delay(3000)
                         showErrorToast = false
                     }
@@ -414,6 +404,9 @@ fun UserFormScreen(
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
                         unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E),
                         errorBorderColor = Color(0xFFDC3545)
                     ),
                     shape = RoundedCornerShape(10.dp),
@@ -432,93 +425,97 @@ fun UserFormScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                        .border(
-                            width = 2.dp,
-                            color = Color(0xFFCED4DA),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .padding(16.dp)
-                ) {
-                    if (userProfileImage != null && !isPhotoDeleted) {
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(10.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                bitmap = userProfileImage!!,
-                                contentDescription = "Фото пользователя",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                if (isEdit) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp)
+                            .border(
+                                width = 2.dp,
+                                color = Color(0xFFCED4DA),
+                                shape = RoundedCornerShape(10.dp)
                             )
-
+                            .padding(16.dp)
+                    ) {
+                        if (userProfileImage != null && !isPhotoDeleted) {
                             Box(
                                 modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(4.dp)
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xAAFF4D4F))
-                                    .clickable {
-                                        isPhotoDeleted = true
-                                        userProfileImage = null
-                                    },
+                                    .size(100.dp)
+                                    .clip(RoundedCornerShape(10.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Удалить фото",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
+                                Image(
+                                    bitmap = userProfileImage!!,
+                                    contentDescription = "Фото пользователя",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(4.dp)
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xAAFF4D4F))
+                                        .clickable {
+                                            isPhotoDeleted = true
+                                            userProfileImage = null
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Удалить фото",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
+                        Button(
+                            onClick = { singleImagePicker.launch() },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = Color(0xFFD3E29F),
+                                contentColor = Color(0xFF2C3E50)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            enabled = !isLoading && !isUploadingPhoto
+                        ) {
+                            if (isUploadingPhoto) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White
+                                )
+                            } else {
+                                Text(
+                                    if (userProfileImage != null && !isPhotoDeleted) "Изменить фото" else "Загрузить фото"
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
 
-                    Button(
-                        onClick = { singleImagePicker.launch() },
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = Color(0xFFD3E29F),
-                            contentColor = Color(0xFF2C3E50)
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        enabled = !isLoading && !isUploadingPhoto
-                    ) {
-                        if (isUploadingPhoto) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White
-                            )
-                        } else {
+                        if (isPhotoDeleted && userProfileImage == null) {
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                if (userProfileImage != null && !isPhotoDeleted) "Изменить фото" else "Загрузить фото"
+                                text = "Фото будет удалено при сохранении",
+                                color = Color(0xFFDC3545),
+                                fontSize = 12.sp
                             )
                         }
-                    }
 
-                    if (isPhotoDeleted && userProfileImage == null) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Фото будет удалено при сохранении",
-                            color = Color(0xFFDC3545),
-                            fontSize = 12.sp
+                            text = "Поддерживаются файлы JPG, JPEG и PNG размером до 5 МБ",
+                            fontSize = 12.sp,
+                            color = Color(0xFF6C757D)
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Поддерживаются файлы JPG, JPEG и PNG",
-                        fontSize = 12.sp,
-                        color = Color(0xFF6C757D)
-                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
@@ -535,6 +532,9 @@ fun UserFormScreen(
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
                         unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E),
                         errorBorderColor = Color(0xFFDC3545)
                     ),
                     shape = RoundedCornerShape(10.dp),
@@ -567,6 +567,9 @@ fun UserFormScreen(
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
                         unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E),
                         errorBorderColor = Color(0xFFDC3545)
                     ),
                     shape = RoundedCornerShape(10.dp),
@@ -599,6 +602,9 @@ fun UserFormScreen(
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
                         unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E),
                         errorBorderColor = Color(0xFFDC3545)
                     ),
                     shape = RoundedCornerShape(10.dp),
@@ -617,7 +623,6 @@ fun UserFormScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Login field
                 OutlinedTextField(
                     value = login,
                     onValueChange = {
@@ -631,6 +636,9 @@ fun UserFormScreen(
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
                         unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E),
                         errorBorderColor = Color(0xFFDC3545)
                     ),
                     shape = RoundedCornerShape(10.dp),
@@ -649,7 +657,6 @@ fun UserFormScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Password field
                 OutlinedTextField(
                     value = password,
                     onValueChange = {
@@ -664,6 +671,9 @@ fun UserFormScreen(
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFFA3F49F),
                         unfocusedBorderColor = Color(0xFFCED4DA),
+                        cursorColor = Color(0xFFA3F49F),
+                        focusedLabelColor = Color(0xFFA3F49F),
+                        textColor = Color(0xFF34495E),
                         errorBorderColor = Color(0xFFDC3545)
                     ),
                     shape = RoundedCornerShape(10.dp),
@@ -693,7 +703,6 @@ fun UserFormScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Role dropdown
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "Роль*",
@@ -755,7 +764,7 @@ fun UserFormScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Status dropdown
+
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "Статус*",

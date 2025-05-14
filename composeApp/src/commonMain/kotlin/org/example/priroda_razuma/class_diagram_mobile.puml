@@ -1,0 +1,234 @@
+@startuml "Priroda Razuma App Architecture"
+
+' Цветовая схема для диаграммы
+!define MODEL_COLOR #A9DCDF
+!define SCREEN_COLOR #C8F7C5
+!define AUTH_COLOR #FFEB99
+!define COMPONENT_COLOR #FFD2D2
+!define UTILS_COLOR #D8CEF6
+
+' Использование стереотипов для визуального разделения
+skinparam class {
+    BackgroundColor<<Model>> MODEL_COLOR
+    BackgroundColor<<Screen>> SCREEN_COLOR
+    BackgroundColor<<Auth>> AUTH_COLOR
+    BackgroundColor<<Component>> COMPONENT_COLOR
+    BackgroundColor<<Utils>> UTILS_COLOR
+    ArrowColor #666666
+    BorderColor #666666
+}
+
+package "org.example.priroda_razuma" {
+    ' Модели
+    package "models" {
+        class User <<Model>> {
+            + id: String
+            + username: String
+            + email: String
+            + role: Role
+        }
+
+        class Patient <<Model>> {
+            + id: String
+            + name: String
+            + documents: List<Document>
+        }
+
+        class Document <<Model>> {
+            + id: String
+            + title: String
+            + content: String
+            + patientId: String
+        }
+
+        class Role <<Model>> {
+            + id: String
+            + name: String
+            + permissions: List<String>
+        }
+
+        class SubDirectories <<Model>> {
+            + id: String
+            + name: String
+            + parentId: String
+        }
+    }
+
+    ' Экраны
+    package "screens" {
+        class PatientListScreen <<Screen>> {
+            + loadPatients()
+            + navigateToPatientForm()
+        }
+
+        class PatientFormScreen <<Screen>> {
+            + savePatient()
+            + validateForm()
+        }
+
+        class DocumentListScreen <<Screen>> {
+            + loadDocuments()
+            + navigateToDocument()
+        }
+
+        class ProfileScreen <<Screen>> {
+            + loadUserProfile()
+            + updateProfile()
+        }
+
+        class RoleListScreen <<Screen>> {
+            + loadRoles()
+            + navigateToRoleForm()
+        }
+
+        class RoleFormScreen <<Screen>> {
+            + saveRole()
+            + validateForm()
+        }
+
+        class UserListScreen <<Screen>> {
+            + loadUsers()
+            + navigateToUserForm()
+        }
+
+        class UserFormScreen <<Screen>> {
+            + saveUser()
+            + validateForm()
+        }
+    }
+
+    ' Аутентификация
+    package "auth" {
+        class AuthManager <<Auth>> {
+            + login(username: String, password: String): TokenResponse
+            + logout()
+            + refreshToken()
+            + isLoggedIn(): Boolean
+        }
+
+        class HttpClientEngine <<Auth>> {
+            + get(url: String): BaseResponse
+            + post(url: String, body: Any): BaseResponse
+            + put(url: String, body: Any): BaseResponse
+            + delete(url: String): BaseResponse
+        }
+
+        class AuthScreen <<Auth>> {
+            + login()
+            + register()
+            + resetPassword()
+        }
+
+        class BaseResponse <<Auth>> {
+            + success: Boolean
+            + message: String
+            + data: Any?
+        }
+
+        class TokenResponse <<Auth>> {
+            + accessToken: String
+            + refreshToken: String
+            + expiresIn: Long
+        }
+    }
+
+    ' Компоненты
+    package "components" {
+        class EmptyStateView <<Component>> {
+            + message: String
+            + icon: ImageResource
+        }
+
+        class PaginationControls <<Component>> {
+            + currentPage: Int
+            + totalPages: Int
+            + onNextPage()
+            + onPrevPage()
+        }
+
+        class PasswordChangeDialog <<Component>> {
+            + oldPassword: String
+            + newPassword: String
+            + confirmPassword: String
+            + validate()
+            + changePassword()
+        }
+
+        class SideBar <<Component>> {
+            + menuItems: List<MenuItem>
+            + selectedItem: MenuItem
+            + onItemSelected()
+        }
+    }
+
+    ' Утилиты
+    package "utils" {
+        class ImageUtils <<Utils>> {
+            + {static} loadImage(url: String): Image
+            + {static} resizeImage(image: Image, width: Int, height: Int): Image
+            + {static} cacheImage(image: Image, key: String)
+        }
+    }
+
+    ' Preferences
+    package "preferences" {
+        class Configuration {
+            + apiUrl: String
+            + cacheEnabled: Boolean
+            + debugMode: Boolean
+        }
+
+        class Theme {
+            + primary: Color
+            + secondary: Color
+            + background: Color
+            + isDarkMode: Boolean
+        }
+    }
+}
+
+' Связи между классами
+User "1" --> "1" Role
+Patient "1" --> "*" Document
+User "*" --> "*" Patient
+AuthManager --> TokenResponse
+AuthManager --> BaseResponse
+AuthManager --> HttpClientEngine
+
+' Связи экранов с моделями
+PatientListScreen --> Patient
+PatientFormScreen --> Patient
+DocumentListScreen --> Document
+ProfileScreen --> User
+RoleListScreen --> Role
+RoleFormScreen --> Role
+UserListScreen --> User
+UserFormScreen --> User
+
+' Связи компонентов с экранами
+PatientListScreen --> EmptyStateView
+PatientListScreen --> PaginationControls
+DocumentListScreen --> PaginationControls
+UserListScreen --> PaginationControls
+RoleListScreen --> PaginationControls
+ProfileScreen --> PasswordChangeDialog
+PatientListScreen ..> SideBar
+DocumentListScreen ..> SideBar
+UserListScreen ..> SideBar
+RoleListScreen ..> SideBar
+ProfileScreen ..> SideBar
+
+' Связи утилит
+ImageUtils --> PatientListScreen
+ImageUtils --> ProfileScreen
+
+' Связи с AuthManager
+AuthScreen --> AuthManager
+PatientListScreen --> AuthManager
+ProfileScreen --> AuthManager
+
+' Связи с preferences
+Theme --> SideBar
+Configuration --> HttpClientEngine
+
+@enduml

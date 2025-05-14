@@ -1,0 +1,202 @@
+@startuml "Unified System Architecture"
+
+' Color scheme for the diagram
+!define MODEL_COLOR #A9DCDF
+!define SCREEN_COLOR #C8F7C5
+!define AUTH_COLOR #FFEB99
+!define COMPONENT_COLOR #FFD2D2
+!define UTILS_COLOR #D8CEF6
+!define SERVICE_COLOR #C8F7C5
+!define REPOSITORY_COLOR #FFEB99
+!define ROUTE_COLOR #D8CEF6
+
+' Stereotypes for visual separation
+skinparam class {
+    BackgroundColor<<Model>> MODEL_COLOR
+    BackgroundColor<<Screen>> SCREEN_COLOR
+    BackgroundColor<<Auth>> AUTH_COLOR
+    BackgroundColor<<Component>> COMPONENT_COLOR
+    BackgroundColor<<Utils>> UTILS_COLOR
+    BackgroundColor<<Service>> SERVICE_COLOR
+    BackgroundColor<<Repository>> REPOSITORY_COLOR
+    BackgroundColor<<Route>> ROUTE_COLOR
+    ArrowColor #666666
+    BorderColor #666666
+}
+
+' Shared Models (used across mobile, frontend, and backend)
+package "models" {
+    class User <<Model>> {
+        + id: String
+        + username: String
+        + email: String
+        + role: Role
+    }
+
+    class Patient <<Model>> {
+        + id: String
+        + name: String
+        + documents: List<Document>
+    }
+
+    class Document <<Model>> {
+        + id: String
+        + title: String
+        + content: String
+        + patientId: String
+    }
+
+    class Role <<Model>> {
+        + id: String
+        + name: String
+        + permissions: List<String>
+    }
+}
+
+' Mobile Application
+package "mobile" {
+    package "screens" {
+        class PatientListScreen <<Screen>> {
+            + loadPatients()
+            + navigateToPatientForm()
+        }
+
+        class PatientFormScreen <<Screen>> {
+            + savePatient()
+            + validateForm()
+        }
+
+        class DocumentListScreen <<Screen>> {
+            + loadDocuments()
+            + navigateToDocument()
+        }
+
+        class ProfileScreen <<Screen>> {
+            + loadUserProfile()
+            + updateProfile()
+        }
+    }
+
+    package "auth" {
+        class AuthManager <<Auth>> {
+            + login(username: String, password: String): TokenResponse
+            + logout()
+            + refreshToken()
+            + isLoggedIn(): Boolean
+        }
+
+        class HttpClientEngine <<Auth>> {
+            + get(url: String): BaseResponse
+            + post(url: String, body: Any): BaseResponse
+        }
+    }
+}
+
+' Frontend
+package "frontend" {
+    package "components" {
+        class LoginForm <<Component>> {
+            + username: string
+            + password: string
+            + onSubmit(): void
+            + validate(): boolean
+        }
+
+        class PatientList <<Component>> {
+            + patients: Patient[]
+            + fetchPatients(): void
+        }
+
+        class PatientForm <<Component>> {
+            + patient: Patient
+            + onSubmit(): void
+        }
+    }
+
+    package "services" {
+        class ApiService <<Service>> {
+            + baseUrl: string
+            + get(url: string): Promise<any>
+            + post(url: string, data: any): Promise<any>
+        }
+    }
+}
+
+' Backend
+package "backend" {
+    package "services" {
+        class UserService <<Service>> {
+            + get_by_username(username)
+            + authenticate(username, password)
+        }
+
+        class PatientService <<Service>> {
+            + get_patients_by_doctor(doctor_id)
+            + search_patients(query)
+        }
+    }
+
+    package "repositories" {
+        class UserRepository <<Repository>> {
+            + get_by_username(username)
+            + get_by_email(email)
+        }
+
+        class PatientRepository <<Repository>> {
+            + get_patients_by_doctor(doctor_id)
+            + search_patients(query)
+        }
+    }
+
+    package "routing" {
+        class UsersRoute <<Route>> {
+            + get_users()
+            + create_user()
+        }
+
+        class PatientsRoute <<Route>> {
+            + get_patients()
+            + create_patient()
+        }
+    }
+}
+
+' Relationships between classes
+' Models
+User "1" --> "1" Role
+Patient "1" --> "*" Document
+User "*" --> "*" Patient
+
+' Mobile
+PatientListScreen --> Patient
+PatientFormScreen --> Patient
+DocumentListScreen --> Document
+ProfileScreen --> User
+AuthManager --> HttpClientEngine
+PatientListScreen --> AuthManager
+ProfileScreen --> AuthManager
+
+' Frontend
+LoginForm --> ApiService
+PatientList --> ApiService
+PatientForm --> ApiService
+PatientList --> Patient
+PatientForm --> Patient
+
+' Backend
+UserService --> UserRepository
+PatientService --> PatientRepository
+UsersRoute --> UserService
+PatientsRoute --> PatientService
+UserRepository --> User
+PatientRepository --> Patient
+
+' Cross-layer interactions
+HttpClientEngine --> ApiService
+ApiService --> UsersRoute
+ApiService --> PatientsRoute
+PatientListScreen --> ApiService
+DocumentListScreen --> ApiService
+ProfileScreen --> ApiService
+
+@enduml
